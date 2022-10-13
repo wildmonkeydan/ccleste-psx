@@ -1,3 +1,7 @@
+.vs
+deps
+out
+build
 *.d
 ccleste
 ccleste-fixedp
