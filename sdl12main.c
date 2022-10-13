@@ -156,7 +156,7 @@ static void LoadData(void) {
 	LOGLOAD("gfx.bmp");
 	loadbmpscale("gfx.bmp", &gfx);
 	LOGDONE();
-	
+
 	LOGLOAD("font.bmp");
 	loadbmpscale("font.bmp", &font);
 	LOGDONE();
@@ -227,7 +227,7 @@ static void OSDdraw(void) {
 		p8_print(osd_text, x, y, 7);
 	}
 }
-	
+
 static Mix_Music* current_music = NULL;
 static _Bool enable_screenshake = 1;
 static _Bool paused = 0;
@@ -290,7 +290,7 @@ int main(int argc, char** argv) {
 	SDL_N3DSKeyBind(KEY_CPAD_RIGHT|KEY_CSTICK_RIGHT|KEY_DRIGHT, SDLK_RIGHT);
 	SDL_N3DSKeyBind(KEY_SELECT, SDLK_F11); //to switch full screen
 	SDL_N3DSKeyBind(KEY_START, SDLK_ESCAPE); //to pause
-	
+
 	SDL_N3DSKeyBind(KEY_Y, SDLK_LSHIFT); //hold to reset / load/save state
 	SDL_N3DSKeyBind(KEY_L, SDLK_d); //load state
 	SDL_N3DSKeyBind(KEY_R, SDLK_s); //save state
@@ -344,7 +344,7 @@ int main(int argc, char** argv) {
 
 		SDL_Rect rc = {60, 60};
 		SDL_BlitSurface(loading,NULL,screen,&rc);
-		
+
 		SDL_Flip(screen);
 		SDL_FreeSurface(loading);
 	} skip_load:
@@ -420,7 +420,7 @@ static void ReadGamepadInput(Uint16* out_buttons);
 
 static void mainLoop(void) {
 	const Uint8* kbstate = SDL_GetKeyState(NULL);
-		
+
 	static int reset_input_timer = 0;
 	//hold F9 (select+start+y) to reset
 	if (initial_game_state != NULL
@@ -602,7 +602,7 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
 		dstrect = (fulldst = (SDL_Rect){0,0,dst->w,dst->h}, &fulldst);
 
 	int srcx, srcy, w, h;
-	
+
 	/* clip the source rectangle to the source surface */
 	if (srcrect) {
 		int maxw, maxh;
@@ -694,7 +694,7 @@ static void p8_print(const char* str, int x, int y, int col) {
 		srcrc.x *= scale;
 		srcrc.y *= scale;
 		srcrc.w = srcrc.h = 8*scale;
-		
+
 		SDL_Rect dstrc = {x*scale, y*scale, scale, scale};
 		Xblit(font, &srcrc, screen, &dstrc, col, 0,0);
 		x += 4;
@@ -710,7 +710,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 	va_list args;
 	int ret = 0;
 	va_start(args, call);
-	
+
 	#define   INT_ARG() va_arg(args, int)
 	#define  BOOL_ARG() (Celeste_P8_bool_t)va_arg(args, int)
 	#define RET_INT(_i)   do {ret = (_i); goto end;} while (0)
@@ -723,7 +723,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 			int mask = INT_ARG();
 
 			(void)mask; //we do not care about this since sdl mixer keeps sounds and music separate
-			
+
 			if (index == -1) { //stop playing
 				Mix_FadeOutMusic(fade);
 				current_music = NULL;
@@ -764,12 +764,12 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		} break;
 		case CELESTE_P8_BTN: { //btn(b)
 			int b = INT_ARG();
-			assert(b >= 0 && b <= 5); 
+			assert(b >= 0 && b <= 5);
 			RET_BOOL(buttons_state & (1 << b));
 		} break;
 		case CELESTE_P8_SFX: { //sfx(id)
 			int id = INT_ARG();
-		
+
 			if (id < (sizeof snd) / (sizeof*snd) && snd[id])
 				Mix_PlayChannel(-1, snd[id], 0);
 		} break;
@@ -888,7 +888,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 			int tx = INT_ARG(), ty = INT_ARG();
 			int mw = INT_ARG(), mh = INT_ARG();
 			int mask = INT_ARG();
-			
+
 			for (int x = 0; x < mw; x++) {
 				for (int y = 0; y < mh; y++) {
 					int tile = tilemap_data[x + mx + (y + my)*128];
