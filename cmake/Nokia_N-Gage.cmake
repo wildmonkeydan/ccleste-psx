@@ -15,7 +15,7 @@ else()
     message(FATAL_ERROR "The environment variable NGAGESDK needs to be defined.")
 endif()
 
-project(SDLexample C CXX)
+project(Celeste C CXX)
 
 include(SDL)
 
@@ -48,6 +48,7 @@ set(launcher_libs
     ${EPOC_LIB}/avkon.lib)
 
 set(SRC_DIR      "${CMAKE_CURRENT_SOURCE_DIR}/src")
+set(DATA_DIR     "${CMAKE_CURRENT_SOURCE_DIR}/data")
 set(RESOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/res")
 
 set(launcher_sources
@@ -67,7 +68,9 @@ build_aif(${RESOURCE_DIR} launcher ${APP_UID})
 build_resource(${RESOURCE_DIR} launcher "")
 
 if(INSTALL_EKA2L1)
-    copy_file(game.exe        ${CMAKE_CURRENT_BINARY_DIR} ${EKA2L1_E_DRIVE}/System/Apps/${APP_NAME} game.exe)
+    copy_file(game.exe        ${CMAKE_CURRENT_BINARY_DIR} ${EKA2L1_E_DRIVE}/System/Apps/${APP_NAME}      game.exe)
+    copy_file(game.exe        ${DATA_DIR}                 ${EKA2L1_E_DRIVE}/System/Apps/${APP_NAME}/data font.bmp)
+    copy_file(game.exe        ${DATA_DIR}                 ${EKA2L1_E_DRIVE}/System/Apps/${APP_NAME}/data gfx.bmp)
     copy_file_ex(launcher.app ${CMAKE_CURRENT_BINARY_DIR} ${EKA2L1_E_DRIVE}/System/Apps/${APP_NAME} launcher.app ${APP_NAME}.app)
     copy_file_ex(launcher.rsc ${CMAKE_CURRENT_BINARY_DIR} ${EKA2L1_E_DRIVE}/System/Apps/${APP_NAME} launcher.rsc ${APP_NAME}.rsc)
     copy_file_ex(launcher.aif ${CMAKE_CURRENT_BINARY_DIR} ${EKA2L1_E_DRIVE}/System/Apps/${APP_NAME} launcher.aif ${APP_NAME}.aif)
@@ -75,10 +78,12 @@ endif()
 
 if(GENERATE_SIS)
     copy_file(game.exe        ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/sis game.exe)
+    copy_file(game.exe        ${DATA_DIR}                 ${CMAKE_CURRENT_SOURCE_DIR}/sis font.bmp)
+    copy_file(game.exe        ${DATA_DIR}                 ${CMAKE_CURRENT_SOURCE_DIR}/sis gfx.bmp)
     copy_file_ex(launcher.app ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/sis launcher.app ${APP_NAME}.app)
     copy_file_ex(launcher.rsc ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/sis launcher.rsc ${APP_NAME}.rsc)
     copy_file_ex(launcher.aif ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/sis launcher.aif ${APP_NAME}.aif)
-    build_sis_ex(game.exe ${RESOURCE_DIR} launcher)
+    build_sis(${RESOURCE_DIR} launcher)
 endif()
 
 add_dependencies(
