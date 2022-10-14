@@ -6,6 +6,10 @@
  * so _init becomes Celeste_P8_init && music becomes P8music, etc
  */
 
+#if defined (__NGAGE__)
+#include "SDL.h"
+#endif
+
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
@@ -243,16 +247,26 @@ static void pico8_srand(unsigned seed) //also decomp'd
 }
 
 #ifndef CELESTE_P8_FIXEDP
+
+#if defined (__NGAGE__)
+#define P8max(a,b) (((a)<(b))?(a):(b))
+#define P8min(a,b) (((a)>(b))?(a):(b))
+#define P8abs SDL_fabsf
+#define P8flr SDL_floorf
+#define fmodf SDL_fmodf
+#define sinf  SDL_sinf
+#else
+#define P8max fmaxf
+#define P8min fminf
+#define P8abs fabsf
+#define P8flr floorf
+#endif
+
 // https://github.com/lemon-sherbet/ccleste/issues/1
 static float P8modulo(float a, float b)
 {
     return fmodf(fmodf(a, b) + b, b);
 }
-
-#define P8max fmaxf
-#define P8min fminf
-#define P8abs fabsf
-#define P8flr floorf
 
 static float P8rnd(float max)
 {
@@ -367,7 +381,11 @@ enum
 
 typedef enum
 {
+#if defined (__NGAGE__)
+#define X(t,ARGS...) OBJ_##t,
+#else
 #define X(t,...) OBJ_##t,
+#endif
     OBJ_PROP_LIST()
 #undef X
     OBJTYPE_COUNT
@@ -762,12 +780,14 @@ static void PLAYER_init(OBJ* this)
 static OBJ player_dummy_copy; //see below
 static void PLAYER_update(OBJ* this)
 {
-    if (pause_player)
-    {
-        return;
-    }
+    bool on_ground;
+    bool on_ice;
+    bool dash;
+    bool jump;
+    float maxfall;
+    float gravity;
 
-    int input = P8btn(k_right) ? 1 : (P8btn(k_left) ? -1 : 0);
+    int  input = P8btn(k_right) ? 1 : (P8btn(k_left) ? -1 : 0);
 
     /*LEMON: in order to kill the player in these lines, while maintaining object slots in the same order as they would be in pico-8,
      *       we need to remove the object there but that shifts back the objects array which will make it so the rest of the player_update()
@@ -775,6 +795,11 @@ static void PLAYER_update(OBJ* this)
      *       a table that is not referenced in the objects table by switching to a dummy copy of the player object */
 
     bool do_kill_player = false;
+
+    if (pause_player)
+    {
+        return;
+    }
 
     // spikes collide
     if (spikes_at(this->x+this->hitbox.x,this->y+this->hitbox.y,this->hitbox.w,this->hitbox.h,this->spd.x,this->spd.y))
@@ -795,8 +820,8 @@ static void PLAYER_update(OBJ* this)
         this = &player_dummy_copy;
     }
 
-    bool on_ground = OBJ_is_solid(this, 0,1);
-    bool on_ice    = OBJ_is_ice(this, 0,1);
+    on_ground = OBJ_is_solid(this, 0,1);
+    on_ice    = OBJ_is_ice(this, 0,1);
 
     // smoke particles
     if (on_ground && !this->was_on_ground)
@@ -804,7 +829,7 @@ static void PLAYER_update(OBJ* this)
         init_object(OBJ_SMOKE,this->x,this->y+4);
     }
 
-    bool jump = P8btn(k_jump) && !this->p_jump;
+    jump = P8btn(k_jump) && !this->p_jump;
     this->p_jump = P8btn(k_jump);
     if ((jump))
     {
@@ -815,7 +840,7 @@ static void PLAYER_update(OBJ* this)
         this->jbuffer-=1;
     }
 
-    bool dash = P8btn(k_dash) && !this->p_dash;
+    dash = P8btn(k_dash) && !this->p_dash;
     this->p_dash = P8btn(k_dash);
 
     if (on_ground)
@@ -845,6 +870,8 @@ static void PLAYER_update(OBJ* this)
         // move
         int   maxrun = 1;
         float accel  = 0.6;
+        float d_full;
+        float d_half;
 
         if (!on_ground)
         {
@@ -876,8 +903,8 @@ static void PLAYER_update(OBJ* this)
         }
 
         // gravity
-        float maxfall=2;
-        float gravity=0.21;
+        maxfall=2;
+        gravity=0.21;
 
         if (P8abs(this->spd.y) <= 0.15)
         {
@@ -930,17 +957,18 @@ static void PLAYER_update(OBJ* this)
         }
 
         // dash
-        float d_full=5;
-        float d_half=d_full*0.70710678118;
+        d_full=5;
+        d_half=d_full*0.70710678118;
 
         if (this->djump>0 && dash)
         {
+            int v_input;
             init_object(OBJ_SMOKE,this->x,this->y);
             this->djump            -= 1;
             this->dash_time         = 4;
             has_dashed              = true;
             this->dash_effect_time  = 10;
-            int v_input=(P8btn(k_up) ? -1 : (P8btn(k_down) ? 1 : 0));
+            v_input=(P8btn(k_up) ? -1 : (P8btn(k_down) ? 1 : 0));
             if (input!=0)
             {
                 if (v_input!=0)
@@ -1190,6 +1218,8 @@ static void SPRING_update(OBJ* this)
         OBJ* hit = OBJ_collide(this, OBJ_PLAYER,0,0);
         if (hit != NULL && hit->spd.y>=0)
         {
+            OBJ* below;
+
             this->spr    = 19;
             hit->y       = this->y-4;
             hit->spd.x  *= 0.2;
@@ -1199,7 +1229,7 @@ static void SPRING_update(OBJ* this)
             init_object(OBJ_SMOKE,this->x,this->y);
 
             // breakable below us
-            OBJ* below=OBJ_collide(this, OBJ_FALL_FLOOR,0,1);
+            below=OBJ_collide(this, OBJ_FALL_FLOOR,0,1);
             if (below != NULL)
             {
                 break_fall_floor(below);
@@ -1246,6 +1276,7 @@ static void BALLOON_update(OBJ* this)
 {
     if (this->spr==22)
     {
+        OBJ* hit;
         this->offset+=0.01;
 #ifdef CELESTE_P8_HACKED_BALLOONS
         //hacked balloons: constant y coord and hitbox. for TASes
@@ -1253,7 +1284,7 @@ static void BALLOON_update(OBJ* this)
 #else
         this->y=this->start+P8sin(this->offset)*2;
 #endif
-        OBJ* hit = OBJ_collide(this, OBJ_PLAYER, 0,0);
+        hit = OBJ_collide(this, OBJ_PLAYER, 0,0);
         if (hit != NULL && hit->djump<max_djump)
         {
             psfx(6);
@@ -1343,11 +1374,12 @@ static void break_fall_floor(OBJ* obj)
 {
     if (obj->state==0)
     {
+        OBJ* hit;
         psfx(15);
         obj->state = 1;
         obj->delay = 15;        //how long until it falls
         init_object(OBJ_SMOKE,obj->x,obj->y);
-        OBJ* hit=OBJ_collide(obj, OBJ_SPRING,0,-1);
+        hit=OBJ_collide(obj, OBJ_SPRING,0,-1);
         if (hit != NULL)
         {
             break_spring(hit);
@@ -1418,6 +1450,7 @@ static void FLY_FRUIT_init(OBJ* this)
 static void FLY_FRUIT_update(OBJ* this)
 {
     bool do_destroy_object = false; //LEMON: see PLAYER_update..
+    OBJ* hit;
     //fly away
     if (this->fly)
     {
@@ -1447,7 +1480,7 @@ static void FLY_FRUIT_update(OBJ* this)
         this->spd.y=P8sin(this->step)*0.5;
     }
     // collect
-    OBJ* hit=OBJ_collide(this, OBJ_PLAYER,0,0);
+    hit=OBJ_collide(this, OBJ_PLAYER,0,0);
     if (hit!=NULL)
     {
         hit->djump=max_djump;
@@ -1515,8 +1548,9 @@ static void LIFEUP_draw(OBJ* this)
 //if_not_fruit=true,
 static void FAKE_WALL_update(OBJ* this)
 {
+    OBJ* hit;
     this->hitbox=(HITBOX){.x=-1,.y=-1,.w=18,.h=18};
-    OBJ* hit = OBJ_collide(this, OBJ_PLAYER,0,0);
+    hit = OBJ_collide(this, OBJ_PLAYER,0,0);
     if (hit!=NULL && hit->dash_effect_time>0)
     {
         hit->spd.x     = -sign(hit->spd.x)*1.5;
@@ -1554,9 +1588,10 @@ static void FAKE_WALL_draw(OBJ* this)
 //if_not_fruit=true,
 static void KEY_update(OBJ* this)
 {
+    int is;
     int was=P8flr(this->spr);
     this->spr=9+(P8sin((float)frames/30.0)+0.5)*1;
-    int is=P8flr(this->spr);
+    is=P8flr(this->spr);
     if (is==10 && is!=was)
     {
         this->flip_x=!this->flip_x;
@@ -1657,8 +1692,8 @@ static void MESSAGE_draw(OBJ* this)
         {
             if (this->text[i]!='#')
             {
-                P8rectfill(this->off2.x-2,this->off2.y-2,this->off2.x+7,this->off2.y+6, 7);
                 char charstr[2];
+                P8rectfill(this->off2.x-2,this->off2.y-2,this->off2.x+7,this->off2.y+6, 7);
                 charstr[0] = this->text[i], charstr[1] = '\0';
                 P8print(charstr,this->off2.x,this->off2.y,0);
                 this->off2.x+=5;
@@ -2277,9 +2312,10 @@ void Celeste_P8_draw()
     // draw objects
     for (i = 0; i < MAX_OBJECTS; i++)
     {
-        OBJ* o = &objects[i];
+        OBJ*  o = &objects[i];
+        short this_id;
     redo_draw:;
-        short this_id = o->id;
+        this_id = o->id;
         if (o->active && (o->type!=OBJ_PLATFORM && o->type!=OBJ_BIG_CHEST))
         {
             draw_object(o);
@@ -2508,8 +2544,9 @@ size_t Celeste_P8_get_state_size(void)
 
 void Celeste_P8_save_state(void* st_)
 {
+    char* st;
     assert(st_ != NULL);
-    char* st = (char*)st_;
+    st = (char*)st_;
 #define V_SAVE(v) memcpy(st, &v, sizeof v), st += sizeof v;
     LISTGVARS(V_SAVE)
 #undef V_SAVE
@@ -2517,8 +2554,9 @@ void Celeste_P8_save_state(void* st_)
 
 void Celeste_P8_load_state(const void* st_)
 {
+    const char* st;
     assert(st_ != NULL);
-    const char* st = (const char*)st_;
+    st = (const char*)st_;
 #define V_LOAD(v) memcpy(&v, st, sizeof v), st += sizeof v;
     LISTGVARS(V_LOAD)
 #undef V_LOAD

@@ -4,6 +4,8 @@
 #ifdef __cplusplus
 #define _Bool bool
 extern "C" {
+#else
+#define _Bool int
 #endif
 
 typedef enum

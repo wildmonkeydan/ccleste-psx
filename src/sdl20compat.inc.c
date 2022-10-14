@@ -16,6 +16,19 @@ static SDL_Renderer* sdl2_rendr      = NULL;
 
 static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flags)
 {
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+    int
+        rmask = 0xff000000,
+        gmask = 0x00ff0000,
+        bmask = 0x0000ff00,
+        amask = 0x000000ff;
+#else
+    int
+        rmask = 0x000000ff,
+        gmask = 0x0000ff00,
+        bmask = 0x00ff0000,
+        amask = 0xff000000;
+#endif
     if (!sdl2_window)
     {
         sdl2_window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_RESIZABLE);
@@ -49,19 +62,6 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
             return NULL;
         }
     }
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-    int
-        rmask = 0xff000000,
-        gmask = 0x00ff0000,
-        bmask = 0x0000ff00,
-        amask = 0x000000ff;
-#else
-    int
-        rmask = 0x000000ff,
-        gmask = 0x0000ff00,
-        bmask = 0x00ff0000,
-        amask = 0xff000000;
-#endif
     sdl2_screen = SDL_CreateRGBSurface(0, width, height, 32, rmask, gmask, bmask, amask);
     assert(sdl2_screen && sdl2_screen->format->BitsPerPixel == bpp);
     return sdl2_screen;
@@ -84,9 +84,9 @@ static void SDL_WM_SetCaption(const char* title, const char* icon)
 
 static int SDL_WM_ToggleFullScreen(SDL_Surface* screen)
 {
+    static int fullscreen = 0;
     assert(screen == sdl2_screen);
     assert(sdl2_window != NULL);
-    static int fullscreen = 0;
     fullscreen = !fullscreen;
     return SDL_SetWindowFullscreen(sdl2_window, fullscreen ? SDL_WINDOW_FULLSCREEN_DESKTOP : 0) == 0;
 }
@@ -98,12 +98,21 @@ static SDL_Surface* SDL_GetVideoSurface(void)
 
 static void SDL_Flip(SDL_Surface* screen)
 {
+#if defined (__NGAGE__)
+    SDL_Rect source = { 0, 0, 128, 128 };
+    SDL_Rect dest   = { 24, 40, 128, 128 };
+#endif
+
     assert(screen == sdl2_screen);
     assert(sdl2_window != NULL);
     SDL_UpdateTexture(sdl2_screen_tex, NULL, screen->pixels, screen->pitch);
     SDL_SetRenderDrawColor(sdl2_rendr, 0, 0, 0, 255);
     SDL_RenderClear(sdl2_rendr);
+#if defined (__NGAGE__)
+    SDL_RenderCopy(sdl2_rendr, sdl2_screen_tex, &source, &dest);
+#else
     SDL_RenderCopy(sdl2_rendr, sdl2_screen_tex, NULL, NULL);
+#endif
     SDL_RenderPresent(sdl2_rendr);
 }
 

@@ -1,4 +1,9 @@
 #include <SDL.h>
+
+// DEBUG
+#define __NGAGE__
+// DEBUG
+
 #if ENABLE_AUDIO == 1
 #include <SDL_mixer.h>
 #endif
@@ -41,7 +46,11 @@ Mix_Music*   mus[6]  = {NULL};
 #define PICO8_W 128
 #define PICO8_H 128
 
+#if defined (__NGAGE__)
+static int scale = 1;
+#else
 static int scale = 4;
+#endif
 
 static const SDL_Color base_palette[16] =
 {
@@ -295,11 +304,15 @@ int main(int argc, char** argv)
     int i;
 #endif
     SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
-#if SDL_MAJOR_VERSION >= 2
+#if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__)
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
     SDL_GameControllerAddMappingsFromRW(SDL_RWFromFile("gamecontrollerdb.txt", "rb"), 1);
 #endif
+#if defined (__NGAGE__)
+    SDL_CHECK(screen = SDL_SetVideoMode(176, 208, 32, videoflag));
+#else
     SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
+#endif
     SDL_WM_SetCaption("Celeste", NULL);
 #if ENABLE_AUDIO == 1
     if (Mix_Init(mixflag) != mixflag)
@@ -459,9 +472,11 @@ static void ReadGamepadInput(Uint16* out_buttons);
 
 static void mainLoop(void)
 {
-    const Uint8* kbstate = SDL_GetKeyState(NULL);
+    const Uint8* kbstate            = SDL_GetKeyState(NULL);
+    static int   reset_input_timer  = 0;
+    Uint16       prev_buttons_state = buttons_state;
+    SDL_Event    ev;
 
-    static int reset_input_timer = 0;
     //hold F9 (select+start+y) to reset
     if (initial_game_state != NULL && kbstate[SDLK_F9])
     {
@@ -486,10 +501,10 @@ static void mainLoop(void)
         reset_input_timer = 0;
     }
 
-    Uint16 prev_buttons_state = buttons_state;
+    prev_buttons_state = buttons_state;
     buttons_state = 0;
 
-#if SDL_MAJOR_VERSION >= 2
+#if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__)
     SDL_GameControllerUpdate();
     ReadGamepadInput(&buttons_state);
 
@@ -514,7 +529,6 @@ static void mainLoop(void)
     }
 #endif
 
-    SDL_Event ev;
     while (SDL_PollEvent(&ev))
     {
         switch (ev.type)
@@ -670,32 +684,36 @@ static void mainLoop(void)
 #ifdef EMSCRIPTEN //emscripten_set_main_loop already sets the fps
     SDL_Delay(1);
 #else
-    static int      t           = 0;
-    static unsigned frame_start = 0;
-    unsigned        frame_end   = SDL_GetTicks();
-    unsigned        frame_time  = frame_end-frame_start;
-    unsigned        target_millis;
-    // frame timing for 30fps is 33.333... ms, but we only have integer granularity
-    // so alternate between 33 and 34 ms, like [33,33,34,33,33,34,...] which averages out to 33.333...
-    if (t < 2)
     {
-        target_millis = 33;
-    }
-    else
-    {
-        target_millis = 34;
-    }
+//#if ! defined (__NGAGE__)
+        static int      t           = 0;
+        static unsigned frame_start = 0;
+        unsigned        frame_end   = SDL_GetTicks();
+        unsigned        frame_time  = frame_end-frame_start;
+        unsigned        target_millis;
+        // frame timing for 30fps is 33.333... ms, but we only have integer granularity
+        // so alternate between 33 and 34 ms, like [33,33,34,33,33,34,...] which averages out to 33.333...
+        if (t < 2)
+        {
+            target_millis = 33;
+        }
+        else
+        {
+            target_millis = 34;
+        }
 
-    if (++t == 3)
-    {
-        t = 0;
-    }
+        if (++t == 3)
+        {
+            t = 0;
+        }
 
-    if (frame_time < target_millis)
-    {
-        SDL_Delay(target_millis - frame_time);
+        if (frame_time < target_millis)
+        {
+            SDL_Delay(target_millis - frame_time);
+        }
+        frame_start = SDL_GetTicks();
+//#endif
     }
-    frame_start = SDL_GetTicks();
 #endif
 }
 
@@ -880,9 +898,9 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 
     switch (call)
     {
-#if ENABLE_AUDIO == 1
         case CELESTE_P8_MUSIC: //music(idx,fade,mask)
         {
+#if ENABLE_AUDIO == 1
             int index = INT_ARG();
             int fade = INT_ARG();
             int mask = INT_ARG();
@@ -899,9 +917,9 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
                 current_music = musi;
                 Mix_FadeInMusic(musi, -1, fade);
             }
+#endif
             break;
         }
-#endif
         case CELESTE_P8_SPR: //spr(sprite,x,y,cols,rows,flipx,flipy)
         {
             int sprite = INT_ARG();
@@ -923,14 +941,14 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
                     8*(sprite % 16),
                     8*(sprite / 16)
                 };
-                srcrc.x *= scale;
-                srcrc.y *= scale;
-                srcrc.w = srcrc.h = scale*8;
                 SDL_Rect dstrc =
                     {
                     (x - camera_x)*scale, (y - camera_y)*scale,
                     scale, scale
                 };
+                srcrc.x *= scale;
+                srcrc.y *= scale;
+                srcrc.w = srcrc.h = scale*8;
                 Xblit(gfx, &srcrc, screen, &dstrc, 0,flipx,flipy);
             }
             break;
@@ -942,18 +960,18 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
             RET_BOOL(buttons_state & (1 << b));
             break;
         }
-#if ENABLE_AUDIO == 1
         case CELESTE_P8_SFX: //sfx(id)
         {
+#if ENABLE_AUDIO == 1
             int id = INT_ARG();
 
             if (id < (sizeof snd) / (sizeof*snd) && snd[id])
             {
                 Mix_PlayChannel(-1, snd[id], 0);
             }
+#endif
             break;
         }
-#endif
         case CELESTE_P8_PAL: //pal(a,b)
         {
             int a = INT_ARG();
@@ -980,19 +998,29 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 
             if (r <= 1)
             {
-                SDL_FillRect(screen, &(SDL_Rect){scale*(cx-1), scale*cy, scale*3, scale}, realcolor);
-                SDL_FillRect(screen, &(SDL_Rect){scale*cx, scale*(cy-1), scale, scale*3}, realcolor);
+                SDL_Rect rect_a = {scale*(cx-1), scale*cy, scale*3, scale};
+                SDL_Rect rect_b = {scale*cx, scale*(cy-1), scale, scale*3};
+
+                SDL_FillRect(screen, &rect_a, realcolor);
+                SDL_FillRect(screen, &rect_b, realcolor);
             }
             else if (r <= 2)
             {
-                SDL_FillRect(screen, &(SDL_Rect){scale*(cx-2), scale*(cy-1), scale*5, scale*3}, realcolor);
-                SDL_FillRect(screen, &(SDL_Rect){scale*(cx-1), scale*(cy-2), scale*3, scale*5}, realcolor);
+                SDL_Rect rect_a = {scale*(cx-2), scale*(cy-1), scale*5, scale*3};
+                SDL_Rect rect_b = {scale*(cx-1), scale*(cy-2), scale*3, scale*5};
+
+                SDL_FillRect(screen, &rect_a, realcolor);
+                SDL_FillRect(screen, &rect_b, realcolor);
             }
             else if (r <= 3)
             {
-                SDL_FillRect(screen, &(SDL_Rect){scale*(cx-3), scale*(cy-1), scale*7, scale*3}, realcolor);
-                SDL_FillRect(screen, &(SDL_Rect){scale*(cx-1), scale*(cy-3), scale*3, scale*7}, realcolor);
-                SDL_FillRect(screen, &(SDL_Rect){scale*(cx-2), scale*(cy-2), scale*5, scale*5}, realcolor);
+                SDL_Rect rect_a = {scale*(cx-3), scale*(cy-1), scale*7, scale*3};
+                SDL_Rect rect_b = {scale*(cx-1), scale*(cy-3), scale*3, scale*7};
+                SDL_Rect rect_c = {scale*(cx-2), scale*(cy-2), scale*5, scale*5};
+
+                SDL_FillRect(screen, &rect_a, realcolor);
+                SDL_FillRect(screen, &rect_b, realcolor);
+                SDL_FillRect(screen, &rect_c, realcolor);
             }
             else  //i dont think the game uses this
             {
@@ -1106,14 +1134,14 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
                             8*(tile % 16),
                             8*(tile / 16)
                         };
-                        srcrc.x *= scale;
-                        srcrc.y *= scale;
-                        srcrc.w = srcrc.h = scale*8;
                         SDL_Rect dstrc =
                             {
                             (tx+x*8 - camera_x)*scale, (ty+y*8 - camera_y)*scale,
                             scale*8, scale*8
                         };
+                        srcrc.x *= scale;
+                        srcrc.y *= scale;
+                        srcrc.w = srcrc.h = scale*8;
 
                         /*
                         if (0)
@@ -1146,18 +1174,24 @@ static int gettileflag(int tile, int flag)
 //coordinates should NOT be scaled before calling this
 static void p8_line(int x0, int y0, int x1, int y1, unsigned char color)
 {
+    Uint32   realcolor = getcolor(color);
+    int      sx, sy, dx, dy, err, e2;
+    SDL_Rect rect;
+
 #define CLAMP(v,min,max) v = v < min ? min : v >= max ? max-1 : v;
     CLAMP(x0,0,screen->w);
     CLAMP(y0,0,screen->h);
     CLAMP(x1,0,screen->w);
     CLAMP(y1,0,screen->h);
 
-    Uint32 realcolor = getcolor(color);
-    int sx, sy, dx, dy, err, e2;
-
 #undef CLAMP
-#define PLOT(x,y) do {                                                  \
-        SDL_FillRect(screen, &(SDL_Rect){x*scale,y*scale,scale,scale}, realcolor); \
+#define PLOT(xa, ya) \
+    rect.x = xa * scale; \
+    rect.x = ya * scale; \
+    rect.w = scale; \
+    rect.h = scale; \
+    do { \
+        SDL_FillRect(screen, &rect, realcolor); \
     } \
     while (0)
     dx = abs(x1 - x0);
@@ -1223,7 +1257,7 @@ static void p8_line(int x0, int y0, int x1, int y1, unsigned char color)
 #undef PLOT
 }
 
-#if SDL_MAJOR_VERSION >= 2
+#if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__)
 //SDL2: read input from connected gamepad
 
 struct mapping
@@ -1330,6 +1364,8 @@ static void ReadGamepadInput(Uint16* out_buttons)
     if (! controller)
     {
         static int tries_left = 30;
+        //use first available controller
+        int count = SDL_NumJoysticks();
 
         if (! tries_left)
         {
@@ -1337,9 +1373,7 @@ static void ReadGamepadInput(Uint16* out_buttons)
         }
         tries_left--;
 
-        //use first available controller
-        int count = SDL_NumJoysticks();
-        SDL_Log("sdl reports %i controllers", count);
+        //SDL_Log("sdl reports %i controllers", count);
         for (i = 0; i < count; i++)
         {
             if (SDL_IsGameController(i))
