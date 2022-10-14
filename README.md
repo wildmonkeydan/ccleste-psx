@@ -23,6 +23,9 @@ is an ongoing process.
 This port should compile for all platforms that are officially supported
 by SDL2.  Including the Nintendo 3DS.
 
+Note: To speed up development, sound support has been temporarily
+disabled.
+
 ## Compiling
 
 ### Windows
