@@ -4,13 +4,15 @@
 &EN
 
 ; standard SIS file header
-#{"Example"},(0x1000abc2),1,0,0
+#{"Celeste"},(0x10005731),1,0,0
 
 ;Supports Series 60 v 0.9
 (0x101F6F88), 0, 0, 0, {"Series60ProductID"}
 
 ;
-"..\sis\game.exe"-"E:\System\Apps\Example\game.exe"
-"..\sis\launcher.aif"-"E:\System\Apps\Example\Example.aif"
-"..\sis\launcher.app"-"E:\System\Apps\Example\Example.app"
-"..\sis\launcher.rsc"-"E:\System\Apps\Example\Example.rsc"
+"..\sis\game.exe"-"E:\System\Apps\Celeste\game.exe"
+"..\sis\Celeste.aif"-"E:\System\Apps\Celeste\Celeste.aif"
+"..\sis\Celeste.app"-"E:\System\Apps\Celeste\Celeste.app"
+"..\sis\Celeste.rsc"-"E:\System\Apps\Celeste\Celeste.rsc"
+"..\sis\font.bmp"-"E:\System\Apps\Celeste\data\font.bmp"
+"..\sis\gfx.bmp"-"E:\System\Apps\Celeste\data\gfx.bmp"
