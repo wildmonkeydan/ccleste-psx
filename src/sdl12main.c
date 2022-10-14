@@ -13,20 +13,10 @@
 #include <assert.h>
 #include <errno.h>
 #include <time.h>
-#ifdef _3DS
-#include <3ds.h>
-#endif
 #include "celeste.h"
 
 static void ErrLog(char* fmt, ...) {
-#ifdef _3DS
-    /*FILE* f = fopen("sdmc:/ccleste.txt", "a");
-      if (!f) return;
-      fprintf(f, "%li \t", (long int)time(NULL));*/
-    FILE* f = stdout; //bottom screen console
-#else
     FILE* f = stderr;
-#endif
 
     va_list ap;
     va_start(ap, fmt);
@@ -47,11 +37,7 @@ Mix_Music* mus[6] = {NULL};
 #define PICO8_W 128
 #define PICO8_H 128
 
-#ifdef _3DS
-static const int scale = 2;
-#else
 static int scale = 4;
-#endif
 
 static const SDL_Color base_palette[16] = {
     {0x00, 0x00, 0x00},
@@ -85,16 +71,12 @@ static void ResetPalette(void) {
 }
 
 static char* GetDataPath(char* path, int n, const char* fname) {
-#ifdef _3DS
-    snprintf(path, n, "romfs:/%s", fname);
-#else
 #ifdef _WIN32
     char pathsep = '\\';
 #else
     char pathsep = '/';
 #endif //_WIN32
     snprintf(path, n, "data%c%s", pathsep, fname);
-#endif //_3DS
 
     return path;
 }
@@ -248,39 +230,6 @@ static Mix_Music* game_state_music = NULL;
 static void mainLoop(void);
 static FILE* TAS = NULL;
 
-#ifdef _3DS
-// hack: newer SDL versions remove SDL_N3DSKeyBind, but I'm too lazy to change the
-// code to properly use SDL_Joystick inputs on 3DS so work around it ...
-static short n3ds_key_map[32];
-
-static void SDL_N3DSKeyBind(int n3dskey, int kbkey) {
-    for (int i = 0; i < 32; i++)
-        if (n3dskey & (1u << i))
-            n3ds_key_map[i] = kbkey;
-}
-#define SDL_GetKeyState n3ds_get_fake_key_state
-static Uint8 *n3ds_get_fake_key_state(int *numkeys) {
-    static Uint8 st[SDLK_LAST];
-    if (numkeys) *numkeys = SDLK_LAST;
-
-    memset(st, 0, sizeof st);
-    hidScanInput();
-    Uint32 down = hidKeysDown();
-    Uint32 held = hidKeysHeld();
-    for (int i = 0; i < 32; i++) {
-        st[n3ds_key_map[i]] |= (held & (1u << i)) != 0;
-        if (down & (1u << i)) {
-            SDL_Event ev;
-            ev.type = SDL_KEYDOWN;
-            ev.key.keysym.sym = n3ds_key_map[i];
-            SDL_PushEvent(&ev);
-        }
-    }
-
-    return st;
-}
-#endif
-
 int main(int argc, char** argv) {
     SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
 #if SDL_MAJOR_VERSION >= 2
@@ -288,23 +237,6 @@ int main(int argc, char** argv) {
     SDL_GameControllerAddMappingsFromRW(SDL_RWFromFile("gamecontrollerdb.txt", "rb"), 1);
 #endif
     int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
-#ifdef _3DS
-    fsInit();
-    romfsInit();
-    videoflag = SDL_DOUBLEBUF | SDL_HWSURFACE | SDL_CONSOLEBOTTOM | SDL_TOPSCR;
-    SDL_N3DSKeyBind(KEY_A, SDLK_z);
-    SDL_N3DSKeyBind(KEY_X|KEY_B, SDLK_x);
-    SDL_N3DSKeyBind(KEY_CPAD_UP|KEY_CSTICK_UP|KEY_DUP, SDLK_UP);
-    SDL_N3DSKeyBind(KEY_CPAD_DOWN|KEY_CSTICK_DOWN|KEY_DDOWN, SDLK_DOWN);
-    SDL_N3DSKeyBind(KEY_CPAD_LEFT|KEY_CSTICK_LEFT|KEY_DLEFT, SDLK_LEFT);
-    SDL_N3DSKeyBind(KEY_CPAD_RIGHT|KEY_CSTICK_RIGHT|KEY_DRIGHT, SDLK_RIGHT);
-    SDL_N3DSKeyBind(KEY_SELECT, SDLK_F11); //to switch full screen
-    SDL_N3DSKeyBind(KEY_START, SDLK_ESCAPE); //to pause
-
-    SDL_N3DSKeyBind(KEY_Y, SDLK_LSHIFT); //hold to reset / load/save state
-    SDL_N3DSKeyBind(KEY_L, SDLK_d); //load state
-    SDL_N3DSKeyBind(KEY_R, SDLK_s); //save state
-#endif
     SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
     SDL_WM_SetCaption("Celeste", NULL);
 #if ENABLE_AUDIO == 1
@@ -389,9 +321,7 @@ int main(int argc, char** argv) {
         if (start_fullscreen_f) fclose(start_fullscreen_f);
     }
 
-#ifdef _3DS
-    while (aptMainLoop()) mainLoop();
-#elif !defined(EMSCRIPTEN)
+#if !defined(EMSCRIPTEN)
     while (running) mainLoop();
 #else
 #include <emscripten.h>
@@ -438,11 +368,7 @@ static void mainLoop(void) {
     static int reset_input_timer = 0;
     //hold F9 (select+start+y) to reset
     if (initial_game_state != NULL
-#ifdef _3DS
-        && kbstate[SDLK_LSHIFT] && kbstate[SDLK_ESCAPE] && kbstate[SDLK_F11]
-#else
         && kbstate[SDLK_F9]
-#endif
         ) {
         reset_input_timer++;
         if (reset_input_timer >= 30) {
@@ -544,11 +470,7 @@ static void mainLoop(void) {
                     }
                     break;
                 } else if ( //toggle screenshake (e / L+R)
-#ifdef _3DS
-                    (ev.key.keysym.sym == SDLK_d && kbstate[SDLK_s]) || (ev.key.keysym.sym == SDLK_s && kbstate[SDLK_d])
-#else
                     ev.key.keysym.sym == SDLK_e
-#endif
                     ) {
                     enable_screenshake = !enable_screenshake;
                     OSDset("screenshake: %s", enable_screenshake ? "on" : "off");
@@ -590,8 +512,6 @@ static void mainLoop(void) {
 
 #ifdef EMSCRIPTEN //emscripten_set_main_loop already sets the fps
     SDL_Delay(1);
-#elif defined(_3DS)
-    gspWaitForVBlank(), gspWaitForVBlank();
 #else
     static int t = 0;
     static unsigned frame_start = 0;
@@ -865,13 +785,6 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
             int x = INT_ARG() - camera_x;
             int y = INT_ARG() - camera_y;
             int col = INT_ARG() % 16;
-
-#ifdef _3DS
-            if (!strcmp(str, "x+c")) {
-                //this is confusing, as 3DS uses a+b button, so use this hack to make it more appropiate
-                str = "a+b";
-            }
-#endif
 
             p8_print(str,x,y,col);
         } break;
