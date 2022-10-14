@@ -63,7 +63,7 @@ cmake ..
 make
 ````
 
-# Controls
+## Controls
 
 |PC                |N-Gage             |Action              |
 |:----------------:|:-----------------:|-------------------:|
@@ -93,7 +93,7 @@ variable `CCLESTE_START_FULLSCREEN` to "1", or by creating the file
 `ccleste-start-fullscreen.txt` in the game directory (contents don't
 matter).
 
-# TAS playback and the fixed point question
+## TAS playback and the fixed point question
 
 In order to playback a TAS, specify it as the first argument to the
 program when running it. On Windows you can drag the TAS file to the
@@ -128,7 +128,7 @@ Using make you can turn on this feature with `make HACKED_BALLOONS=1`.
 You can combine both of these with `make HACKED_BALLOONS=1
 USE_FIXEDP=1`.
 
-# credits
+## Credits
 
 Sound wave files are taken from
 [https://github.com/JeffRuLz/Celeste-Classic-GBA/tree/master/maxmod_data](https://github.com/JeffRuLz/Celeste-Classic-GBA/tree/master/maxmod_data),
