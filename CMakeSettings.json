@@ -45,6 +45,29 @@
                 "type": "FILEPATH"
               }
             ]
+        },
+        {
+            "name": "N-Gage",
+            "generator": "Ninja",
+            "configurationType": "Release",
+            "inheritEnvironments": [ "msvc_x64_x64" ],
+            "buildRoot": "${projectDir}\\out\\build\\${name}",
+            "installRoot": "${projectDir}\\out\\install\\${name}",
+            "cmakeCommandArgs": "-DBUILD_FOR_NOKIA_NGAGE=ON",
+            "buildCommandArgs": "-v",
+            "ctestCommandArgs": "",
+            "variables": [
+                {
+                    "name": "INSTALL_EKA2L1",
+                    "value": "False",
+                    "type": "BOOL"
+                },
+                {
+                    "name": "GENERATE_SIS",
+                    "value": "False",
+                    "type": "BOOL"
+                }
+            ]
         }
     ]
 }
