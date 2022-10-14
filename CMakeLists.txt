@@ -4,7 +4,12 @@
 
 cmake_minimum_required(VERSION 3.10)
 
-project(SDLexample C CXX)
+if(BUILD_FOR_NOKIA_NGAGE)
+  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Nokia_N-Gage.cmake)
+  return()
+endif()
+
+project(Celeste C CXX)
 
 set(CMAKE_C_STANDARD 90)
 
