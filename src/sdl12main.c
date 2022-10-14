@@ -1,9 +1,5 @@
 #include <SDL.h>
 
-// DEBUG
-#define __NGAGE__
-// DEBUG
-
 #if ENABLE_AUDIO == 1
 #include <SDL_mixer.h>
 #endif
