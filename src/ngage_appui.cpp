@@ -32,7 +32,7 @@ CNGageAppUi::CNGageAppUi()
 
     iAppView = NULL;
 
-    if (KErrNone == Proc.Create(_L("E:\\System\\Apps\\Example\\game.exe"), _L("")))
+    if (KErrNone == Proc.Create(_L("E:\\System\\Apps\\Celeste\\game.exe"), _L("")))
     {
         Proc.Resume();
         Proc.Close();

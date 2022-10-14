@@ -90,7 +90,12 @@ static char* GetDataPath(char* path, int n, const char* fname)
 #else
     char pathsep = '/';
 #endif //_WIN32
+
+#if defined (__NGAGE__)
+    SDL_snprintf(path, n, "E:\\System\\Apps\\Celeste\\data\\%s", fname);
+#else
     SDL_snprintf(path, n, "data%c%s", pathsep, fname);
+#endif
 
     return path;
 }
@@ -271,8 +276,8 @@ static void OSDdraw(void)
     {
         const int x = 4;
         const int y = 120 + (osd_timer < 10 ? 10-osd_timer : 0); //disappear by going below the screen
-        p8_rectfill(x-2, y-2, x+4*strlen(osd_text), y+6, 6); //outline
-        p8_rectfill(x-1, y-1, x+4*strlen(osd_text)-1, y+5, 0);
+        p8_rectfill(x-2, y-2, x+4*SDL_strlen(osd_text), y+6, 6); //outline
+        p8_rectfill(x-1, y-1, x+4*SDL_strlen(osd_text)-1, y+5, 0);
         p8_print(osd_text, x, y, 7);
     }
 }
@@ -295,11 +300,13 @@ int main(int argc, char** argv)
 {
     int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
     int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
+    int initflag  = SDL_INIT_VIDEO;
 #if ENABLE_AUDIO == 1
     int mixflag = MIX_INIT_OGG;
     int i;
+    initflag |= SDL_INIT_AUDIO;
 #endif
-    SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
+    SDL_CHECK(SDL_Init(initflag) == 0);
 #if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__)
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
     SDL_GameControllerAddMappingsFromRW(SDL_RWFromFile("gamecontrollerdb.txt", "rb"), 1);
@@ -397,7 +404,7 @@ skip_load:
 
     SDL_Log("ready");
     {
-        FILE* start_fullscreen_f = fopen("ccleste-start-fullscreen.txt", "r");
+        FILE*       start_fullscreen_f = fopen("ccleste-start-fullscreen.txt", "r");
         const char* start_fullscreen_v = SDL_getenv("CCLESTE_START_FULLSCREEN");
         if (start_fullscreen_f || (start_fullscreen_v && *start_fullscreen_v))
         {
@@ -578,7 +585,11 @@ static void mainLoop(void)
                     Celeste_P8__DEBUG();
                     break;
                 }
+#if defined (__NGAGE__)
+                else if (ev.key.keysym.sym == SDLK_s) //save state
+#else
                 else if (ev.key.keysym.sym == SDLK_s && kbstate[SDLK_LSHIFT]) //save state
+#endif
                 {
                 save_state:
                     game_state = game_state ? game_state : SDL_malloc(Celeste_P8_get_state_size());
@@ -592,7 +603,11 @@ static void mainLoop(void)
                     }
                     break;
                 }
+#if defined (__NGAGE__)
+                else if (ev.key.keysym.sym == SDLK_d) //load state
+#else
                 else if (ev.key.keysym.sym == SDLK_d && kbstate[SDLK_LSHIFT]) //load state
+#endif
                 {
                 load_state:
                     if (game_state)
@@ -681,7 +696,7 @@ static void mainLoop(void)
     SDL_Delay(1);
 #else
     {
-//#if ! defined (__NGAGE__)
+#if ! defined (__NGAGE__)
         static int      t           = 0;
         static unsigned frame_start = 0;
         unsigned        frame_end   = SDL_GetTicks();
@@ -708,7 +723,7 @@ static void mainLoop(void)
             SDL_Delay(target_millis - frame_time);
         }
         frame_start = SDL_GetTicks();
-//#endif
+#endif
     }
 #endif
 }
@@ -1171,7 +1186,7 @@ static int gettileflag(int tile, int flag)
 static void p8_line(int x0, int y0, int x1, int y1, unsigned char color)
 {
     Uint32   realcolor = getcolor(color);
-    int      sx, sy, dx, dy, err, e2;
+    int      sx, sy, dx, dy, err;
     SDL_Rect rect;
 
 #define CLAMP(v,min,max) v = v < min ? min : v >= max ? max-1 : v;
@@ -1183,7 +1198,7 @@ static void p8_line(int x0, int y0, int x1, int y1, unsigned char color)
 #undef CLAMP
 #define PLOT(xa, ya) \
     rect.x = xa * scale; \
-    rect.x = ya * scale; \
+    rect.y = ya * scale; \
     rect.w = scale; \
     rect.h = scale; \
     do { \
@@ -1237,6 +1252,7 @@ static void p8_line(int x0, int y0, int x1, int y1, unsigned char color)
 
     while (x0 != x1 || y0 != y1)
     {
+        int e2;
         PLOT(x0, y0);
         e2 = 2 * err;
         if (e2 > -dy)

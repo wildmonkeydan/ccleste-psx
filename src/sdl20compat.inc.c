@@ -31,13 +31,21 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
 #endif
     if (!sdl2_window)
     {
+#if (__NGAGE__)
+        sdl2_window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, 0);
+#else
         sdl2_window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_RESIZABLE);
+#endif
         if (!sdl2_window)
         {
             goto die;
         }
+#if (__NGAGE__)
+        sdl2_rendr = SDL_CreateRenderer(sdl2_window, -1, SDL_RENDERER_SOFTWARE);
+#else
         sdl2_rendr = SDL_CreateRenderer(sdl2_window, -1, 0);
         SDL_RenderSetLogicalSize(sdl2_rendr, width, height);
+#endif
         if (!sdl2_rendr)
         {
             goto die;
@@ -100,7 +108,7 @@ static void SDL_Flip(SDL_Surface* screen)
 {
 #if defined (__NGAGE__)
     SDL_Rect source = { 0, 0, 128, 128 };
-    SDL_Rect dest   = { 24, 40, 128, 128 };
+    SDL_Rect dest   = { 24, 40, 123, 128 };
 #endif
 
     assert(screen == sdl2_screen);
@@ -118,6 +126,29 @@ static void SDL_Flip(SDL_Surface* screen)
 
 #define SDL_GetKeyState SDL_GetKeyboardState
 //the above function now returns array indexed by scancodes, so we need to use those constants
+#if defined (__NGAGE__)
+// Reset
+#define SDLK_F9         SDL_SCANCODE_BACKSPACE
+// Pause
+#define SDLK_ESCAPE     SDL_SCANCODE_SOFTRIGHT
+// Quit
+#define SDLK_DELETE     SDL_SCANCODE_SOFTLEFT
+// Save state
+#define SDLK_s          SDL_SCANCODE_1
+// Load state
+#define SDLK_d          SDL_SCANCODE_2
+// Toggle screenshake
+#define SDLK_e          SDL_SCANCODE_3
+// Jump
+#define SDLK_z          SDL_SCANCODE_7
+// Dash
+#define SDLK_x          SDL_SCANCODE_5
+// Directional controls
+#define SDLK_LEFT       SDL_SCANCODE_LEFT
+#define SDLK_RIGHT      SDL_SCANCODE_RIGHT
+#define SDLK_UP         SDL_SCANCODE_UP
+#define SDLK_DOWN       SDL_SCANCODE_DOWN
+#else
 #define SDLK_F9         SDL_SCANCODE_F9
 #define SDLK_ESCAPE     SDL_SCANCODE_ESCAPE
 #define SDLK_DELETE     SDL_SCANCODE_DELETE
@@ -138,5 +169,6 @@ static void SDL_Flip(SDL_Surface* screen)
 #define SDLK_z          SDL_SCANCODE_Z
 #define SDLK_e          SDL_SCANCODE_E
 #define SDLK_v          SDL_SCANCODE_V
+#endif
 
 #define sym scancode // SDL_Keysym.sym -> SDL_Keysym.scancode

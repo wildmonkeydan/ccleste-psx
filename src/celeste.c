@@ -249,8 +249,8 @@ static void pico8_srand(unsigned seed) //also decomp'd
 #ifndef CELESTE_P8_FIXEDP
 
 #if defined (__NGAGE__)
-#define P8max(a,b) (((a)<(b))?(a):(b))
-#define P8min(a,b) (((a)>(b))?(a):(b))
+inline double P8max(double left, double right) { return (left > right) ? left : right; }
+inline double P8min(double left, double right) { return (left < right) ? left : right; }
 #define P8abs SDL_fabsf
 #define P8flr SDL_floorf
 #define fmodf SDL_fmodf
@@ -784,8 +784,6 @@ static void PLAYER_update(OBJ* this)
     bool on_ice;
     bool dash;
     bool jump;
-    float maxfall;
-    float gravity;
 
     int  input = P8btn(k_right) ? 1 : (P8btn(k_left) ? -1 : 0);
 
@@ -872,6 +870,8 @@ static void PLAYER_update(OBJ* this)
         float accel  = 0.6;
         float d_full;
         float d_half;
+        float maxfall;
+        float gravity;
 
         if (!on_ground)
         {
