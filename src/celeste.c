@@ -14,7 +14,6 @@
 
 #include "celeste.h"
 
-
 #ifdef CELESTE_P8_FIXEDP
 
 //very ugly hack:
@@ -154,7 +153,6 @@ static bool tile_flag_at(int x,int y,int w,int h,int flag);
 static int tile_at(int x,int y);
 static bool spikes_at(float x,float y,int w,int h,float xspd,float yspd);
 
-
 //exported /imported functions
 static Celeste_P8_cb_func_t Celeste_P8_call = NULL;
 
@@ -212,50 +210,74 @@ static inline void P8map(int mx, int my, int tx, int ty, int mw, int mh, int mas
 }
 //these values dont matter as set_rndseed should be called before init, as long as they arent both zero
 static unsigned rnd_seed_lo = 0, rnd_seed_hi = 1;
-static int pico8_random(int max) { //decomp'd pico-8
-    if (!max) return 0;
+
+static int pico8_random(int max) //decomp'd pico-8
+{
+    if (!max)
+    {
+        return 0;
+    }
     rnd_seed_hi = ((rnd_seed_hi << 16) | (rnd_seed_hi >> 16)) + rnd_seed_lo;
     rnd_seed_lo += rnd_seed_hi;
     return rnd_seed_hi % (unsigned)max;
 };
-static void pico8_srand(unsigned seed) { //also decomp'd
-    if (seed == 0) {
+
+static void pico8_srand(unsigned seed) //also decomp'd
+{
+    int i;
+
+    if (seed == 0)
+    {
         rnd_seed_hi = 0x60009755;
         seed = 0xdeadbeef;
-    } else {
+    }
+    else
+    {
         rnd_seed_hi = seed ^ 0xbead29ba;
     }
-    for (int i = 0x20; i > 0; i--) {
+    for (i = 0x20; i > 0; i--) {
         rnd_seed_hi = ((rnd_seed_hi << 16) | (rnd_seed_hi >> 16)) + seed;
         seed += rnd_seed_hi;
     }
     rnd_seed_lo = seed;
 }
+
 #ifndef CELESTE_P8_FIXEDP
 // https://github.com/lemon-sherbet/ccleste/issues/1
-static float P8modulo(float a, float b) {
+static float P8modulo(float a, float b)
+{
     return fmodf(fmodf(a, b) + b, b);
 }
+
 #define P8max fmaxf
 #define P8min fminf
 #define P8abs fabsf
 #define P8flr floorf
-static float P8rnd(float max) {
+
+static float P8rnd(float max)
+{
     int n = pico8_random(max * (1<<16));
     return (float)n / (1<<16);
 }
-static float P8sin(float x) {
+
+static float P8sin(float x)
+{
     return -sinf(x*6.2831853071796f); //https://pico-8.fandom.com/wiki/Math
 }
+
 #else //CELESTE_P8_FIXEDP
+
 #define P8modulo _fix32_mod
-#define P8max _fix32_max
-#define P8min _fix32_min
-#define P8abs _fix32_abs
-#define P8flr _fix32_floor
-static _fix32 P8rnd(_fix32 max) {
+#define P8max    _fix32_max
+#define P8min    _fix32_min
+#define P8abs    _fix32_abs
+#define P8flr    _fix32_floor
+
+static _fix32 P8rnd(_fix32 max)
+{
     return _fix32::from_bits(pico8_random(max.n));
 }
+
 #define P8sin _fix32_sin
 #endif
 
@@ -375,7 +397,8 @@ void Celeste_P8_init() //identifiers beginning with underscores are reserved in 
 
 static void title_screen()
 {
-    for (int i = 0; i <= 29; i++)
+    int i;
+    for (i = 0; i <= 29; i++)
     {
         got_fruit[i] = false;
     }
@@ -424,7 +447,8 @@ static CLOUD clouds[17];
 //top level init code has been moved into a function
 static void PRELUDE_initclouds()
 {
-    for (int i=0; i<=16; i++)
+    int i;
+    for (i=0; i<=16; i++)
     {
         clouds[i] = (CLOUD){
             .x   = P8rnd(128),
@@ -448,7 +472,8 @@ static PARTICLE dead_particles[8];
 //top level init code has been moved into a function
 static void PRELUDE_initparticles()
 {
-    for (int i=0; i<=24; i++)
+    int i;
+    for (i=0; i<=24; i++)
     {
         particles[i] = (PARTICLE) {
             .x   = P8rnd(128),
@@ -478,7 +503,7 @@ typedef struct
 typedef struct
 {
     bool  active;
-    short id;                   //unique identifier for each object, incremented per object
+    short id; //unique identifier for each object, incremented per object
 
     //inherited
     OBJTYPE type;
@@ -493,7 +518,7 @@ typedef struct
     //player
     bool  p_jump, p_dash;
     int   grace, jbuffer, djump, dash_time;
-    short dash_effect_time;     //can underflow in normal gameplay (after 18 minutes)
+    short dash_effect_time; //can underflow in normal gameplay (after 18 minutes)
     VEC   dash_target;
     VEC   dash_accel;
     float spr_off;
@@ -617,19 +642,23 @@ static bool OBJ_is_solid(OBJ* obj, float ox, float oy)
         || OBJ_check(obj, OBJ_FAKE_WALL,ox,oy);
 }
 
-static bool OBJ_is_ice(OBJ* obj, float ox, float oy) {
+static bool OBJ_is_ice(OBJ* obj, float ox, float oy)
+{
     return ice_at(obj->x+obj->hitbox.x+ox,obj->y+obj->hitbox.y+oy,obj->hitbox.w,obj->hitbox.h);
 }
 
-static OBJ* OBJ_collide(OBJ* obj, OBJTYPE type, float ox, float oy) {
-    OBJ* other;
-    for (int i=0; i < MAX_OBJECTS; i++) {
-        other=&objects[i];
+static OBJ* OBJ_collide(OBJ* obj, OBJTYPE type, float ox, float oy)
+{
+    int i;
+    for (i=0; i < MAX_OBJECTS; i++)
+    {
+        OBJ* other=&objects[i];
         if (other->active && other->type == type && other != obj && other->collideable &&
             other->x+other->hitbox.x+other->hitbox.w > obj->x+obj->hitbox.x+ox &&
             other->y+other->hitbox.y+other->hitbox.h > obj->y+obj->hitbox.y+oy &&
             other->x+other->hitbox.x < obj->x+obj->hitbox.x+obj->hitbox.w+ox &&
-            other->y+other->hitbox.y < obj->y+obj->hitbox.y+obj->hitbox.h+oy) {
+            other->y+other->hitbox.y < obj->y+obj->hitbox.y+obj->hitbox.h+oy)
+        {
             return other;
         }
     }
@@ -662,7 +691,8 @@ static void OBJ_move_x(OBJ* obj, float amount, float start)
     if (obj->solids)
     {
         float step = sign(amount);
-        for (float i=start; i <= P8abs(amount); i+=1)
+        float i;
+        for (i=start; i <= P8abs(amount); i+=1)
         {
             if (!OBJ_is_solid(obj, step,0))
             {
@@ -687,7 +717,8 @@ static void OBJ_move_y(OBJ* obj, float amount)
     if (obj->solids)
     {
         float step = sign(amount);
-        for (int i=0; i <= P8abs(amount); i++)
+        int   i;
+        for (i=0; i <= P8abs(amount); i++)
         {
             if (!OBJ_is_solid(obj,0,step))
             {
@@ -812,9 +843,8 @@ static void PLAYER_update(OBJ* this)
     else
     {
         // move
-        int maxrun=1;
-        float accel=0.6;
-        float deccel=0.15;
+        int   maxrun = 1;
+        float accel  = 0.6;
 
         if (!on_ground)
         {
@@ -831,6 +861,7 @@ static void PLAYER_update(OBJ* this)
 
         if (P8abs(this->spd.x) > maxrun)
         {
+            float deccel=0.15;
             this->spd.x=appr(this->spd.x,sign(this->spd.x)*maxrun,deccel);
         }
         else
@@ -1027,9 +1058,11 @@ static void psfx(int num)
     }
 }
 
-void create_hair(OBJ* obj) {
+void create_hair(OBJ* obj)
+{
+    int i;
     /*obj->hair = {};*/
-    for (int i=0;i<=4;i++)
+    for (i=0;i<=4;i++)
     {
         obj->hair[i] = (HAIR) {
             .x=obj->x,
@@ -1564,7 +1597,8 @@ static void CHEST_update(OBJ* this)
 }
 
 //platform
-static void PLATFORM_init(OBJ* this) {
+static void PLATFORM_init(OBJ* this)
+{
     this->x        -= 4;
     this->solids    = false;
     this->hitbox.w  = 16;
@@ -1607,6 +1641,7 @@ static void MESSAGE_draw(OBJ* this)
     this->text="-- celeste mountain --#this memorial to those# perished on the climb";
     if (OBJ_check(this, OBJ_PLAYER,4,0))
     {
+        int i;
         if (this->index<strlen(this->text))
         {
             this->index+=0.5;
@@ -1618,7 +1653,7 @@ static void MESSAGE_draw(OBJ* this)
         }
         this->off2.x = 8;
         this->off2.y = 96;
-        for (int i=0; i<this->index; i++)
+        for (i=0; i<this->index; i++)
         {
             if (this->text[i]!='#')
             {
@@ -1673,6 +1708,7 @@ static void BIG_CHEST_draw(OBJ* this)
     }
     else if (this->state==1)
     {
+        int i;
         this->timer-=1;
         shake=5;
         flash_bg=true;
@@ -1694,7 +1730,7 @@ static void BIG_CHEST_draw(OBJ* this)
             init_object(OBJ_ORB,this->x+4,this->y+4);
             pause_player         = false;
         }
-        for (int i = 0; i < this->particle_count; i++)
+        for (i = 0; i < this->particle_count; i++)
         {
             PARTICLE* p = &this->particles[i];
             p->y+=p->spd;
@@ -1715,9 +1751,13 @@ static void ORB_init(OBJ* this)
 
 static void ORB_draw(OBJ* this)
 {
+    bool  destroy_self = false;
+    OBJ*  hit;
+    float off;
+    float i;
+
     this->spd.y=appr(this->spd.y,0,0.5);
-    OBJ* hit=OBJ_collide(this, OBJ_PLAYER,0,0);
-    bool destroy_self = false;
+    hit=OBJ_collide(this, OBJ_PLAYER,0,0);
     if (this->spd.y==0 && hit!=NULL)
     {
         music_timer  = 45;
@@ -1730,8 +1770,8 @@ static void ORB_draw(OBJ* this)
     }
 
     P8spr(102,this->x,this->y,  1,1,false,false);
-    float off=(float)frames/30.f;
-    for (float i=0; i <= 7; i+=1)
+    off=(float)frames/30.f;
+    for (i=0; i <= 7; i+=1)
     {
         P8circfill(this->x+4+P8cos(off+i/8.f)*8,this->y+4+P8sin(off+i/8.f)*8,1,7);
     }
@@ -1743,11 +1783,13 @@ static void ORB_draw(OBJ* this)
 
 //flag
 //tile=118,
-static void FLAG_init(OBJ* this) {
+static void FLAG_init(OBJ* this)
+{
+    int i;
     this->x     += 5;
     this->score  = 0;
     this->show   = false;
-    for (int i=0; i < FRUIT_COUNT; i++)
+    for (i=0; i < FRUIT_COUNT; i++)
     {
         if (got_fruit[i])
         {
@@ -1766,13 +1808,13 @@ static void FLAG_draw(OBJ* this)
         P8spr(26,55,6, 1,1,false,false);
         {
             char str[16];
-            snprintf(str, sizeof(str), "x%i", this->score);
+            SDL_snprintf(str, sizeof(str), "x%i", this->score);
             P8print(str,64,9,7);
         }
         draw_time(49,16);
         {
             char str[16];
-            snprintf(str, sizeof(str), "deaths:%i", deaths);
+            SDL_snprintf(str, sizeof(str), "deaths:%i", deaths);
             P8print(str,48,24,7);
         }
     }
@@ -1815,7 +1857,7 @@ static void ROOM_TITLE_draw(OBJ* this)
             int level=(1+level_index())*100;
             {
                 char str[16];
-                snprintf(str, sizeof(str), "%i m", level);
+                SDL_snprintf(str, sizeof(str), "%i m", level);
                 P8print(str,52+(level<1000 ? 2 : 0),62,7);
             }
         }
@@ -1830,13 +1872,16 @@ static void ROOM_TITLE_draw(OBJ* this)
 
 static OBJ* init_object(OBJTYPE type, float x, float y)
 {
+    static short next_id = 0;
+    OBJ*         obj     = NULL;
+    int          i;
+
     //if (type.if_not_fruit!=NULL && got_fruit[1+level_index()]) {
     if (OBJTYPE_prop[type].if_not_fruit && got_fruit[level_index()])
     {
         return NULL;
     }
-    OBJ* obj = NULL;
-    for (int i = 0; i < MAX_OBJECTS; i++)
+    for (i = 0; i < MAX_OBJECTS; i++)
     {
         if (!objects[i].active) {
             obj = &objects[i];
@@ -1849,9 +1894,8 @@ static OBJ* init_object(OBJTYPE type, float x, float y)
         printf("exhausted object memory..\n");
         return NULL;
     }
-    obj->active          = true;
-    static short next_id = 0;
-    obj->id              = next_id++;
+    obj->active = true;
+    obj->id     = next_id++;
 
     obj->type = type;
     obj->collideable = true;
@@ -1888,13 +1932,14 @@ static void destroy_object(OBJ* obj)
 
 static void kill_player(OBJ* obj)
 {
+    int   dead_particles_count = 0;
+    float dir;
     sfx_timer  = 12;
     P8sfx(0);
     deaths    += 1;
     shake      = 10;
     //destroy_object(obj);
-    int dead_particles_count = 0;
-    for (float dir=0; dir <= 7; dir+=1)
+    for (dir=0; dir <= 7; dir+=1)
     {
         float angle=(dir/8);
         dead_particles[dead_particles_count++] = (PARTICLE)
@@ -1956,13 +2001,14 @@ static bool room_just_loaded = false; //for debugging loading jank
 
 static void load_room(int x, int y)
 {
+    int i, tx, ty;
     has_dashed       = false;
     has_key          = false;
     room_just_loaded = true;
 
     //int oldcount = 0;
     //remove existing objects
-    for (int i = 0; i < MAX_OBJECTS; i++)
+    for (i = 0; i < MAX_OBJECTS; i++)
     {
         //oldcount += objects[i].active ? 1 : 0;
         objects[i].active = false;
@@ -1974,9 +2020,9 @@ static void load_room(int x, int y)
     room.y = y;
 
     // entities
-    for (int tx=0; tx <= 15; tx++)
+    for (tx=0; tx <= 15; tx++)
     {
-        for (int ty=0; ty <= 15; ty++)
+        for (ty=0; ty <= 15; ty++)
         {
             int tile = P8mget(room.x*16+tx,room.y*16+ty);
             if (tile==11)
@@ -1991,7 +2037,8 @@ static void load_room(int x, int y)
             }
             else
             {
-                for (int type = 0; type < OBJTYPE_COUNT; type++) //safe since types are ordered starting at 0
+                int type;
+                for (type = 0; type < OBJTYPE_COUNT; type++) //safe since types are ordered starting at 0
                 {
                     if (tile == OBJTYPE_prop[type].tile)
                     {
@@ -2016,6 +2063,8 @@ static void load_room(int x, int y)
 
 void Celeste_P8_update()
 {
+    int i;
+
     frames=((frames+1)%30);
     if (frames==0 && level_index()<30)
     {
@@ -2072,9 +2121,10 @@ void Celeste_P8_update()
     //printf("BEGIN FRAME\n");
     room_just_loaded = false;
     // update each object
-    for (int i = 0; i < MAX_OBJECTS; i++)
+    for (i = 0; i < MAX_OBJECTS; i++)
     {
-        OBJ* obj = &objects[i];
+        OBJ*  obj = &objects[i];
+        short this_id;
 
     redo_update_slot:
         if (!obj->active)
@@ -2084,7 +2134,7 @@ void Celeste_P8_update()
 
         OBJ_move(obj, obj->spd.x,obj->spd.y);
         //printf("update #%i (%s)\n", i, OBJ_PROP(obj).nam);
-        short this_id = obj->id;
+        this_id = obj->id;
         if (OBJ_PROP(obj).update!=NULL)
         {
             OBJ_PROP(obj).update(obj);
@@ -2133,6 +2183,10 @@ void Celeste_P8_update()
 //////////////////////-
 void Celeste_P8_draw()
 {
+    int bg_col = 0;
+    int i;
+    int off;
+
     if (freeze>0)
     {
         return;
@@ -2145,6 +2199,7 @@ void Celeste_P8_draw()
     if (start_game)
     {
         int c=10;
+
         if (start_game_flash>10)
         {
             if (frames%10<5)
@@ -2176,7 +2231,6 @@ void Celeste_P8_draw()
     }
 
     // clear screen
-    int bg_col = 0;
     if (flash_bg)
     {
         bg_col = frames/5;
@@ -2190,7 +2244,7 @@ void Celeste_P8_draw()
     // clouds
     if (!is_title())
     {
-        for (int i = 0; i <= 16; i++)
+        for (i = 0; i <= 16; i++)
         {
             CLOUD* c = &clouds[i];
             c->x += c->spd;
@@ -2207,7 +2261,7 @@ void Celeste_P8_draw()
     P8map(room.x * 16,room.y * 16,0,0,16,16,4);
 
     // platforms/big chest
-    for (int i = 0; i < MAX_OBJECTS; i++)
+    for (i = 0; i < MAX_OBJECTS; i++)
     {
         OBJ* o = &objects[i];
         if (o->active && (o->type==OBJ_PLATFORM || o->type==OBJ_BIG_CHEST))
@@ -2217,11 +2271,11 @@ void Celeste_P8_draw()
     }
 
     // draw terrain
-    int off=is_title() ? -4 : 0;
+    off=is_title() ? -4 : 0;
     P8map(room.x*16,room.y * 16,off,0,16,16,2);
 
     // draw objects
-    for (int i = 0; i < MAX_OBJECTS; i++)
+    for (i = 0; i < MAX_OBJECTS; i++)
     {
         OBJ* o = &objects[i];
     redo_draw:;
@@ -2239,7 +2293,7 @@ void Celeste_P8_draw()
     P8map(room.x * 16,room.y * 16,0,0,16,16,8);
 
     // particles
-    for (int i = 0; i <= 24; i++)
+    for (i = 0; i <= 24; i++)
     {
         PARTICLE* p = &particles[i];
         p->x += p->spd;
@@ -2255,7 +2309,7 @@ void Celeste_P8_draw()
     }
 
     // dead particles
-    for (int i = 0; i <= 7; i++)
+    for (i = 0; i <= 7; i++)
     {
         PARTICLE* p = &dead_particles[i];
         if (p->active)
@@ -2290,7 +2344,7 @@ void Celeste_P8_draw()
     if (level_index()==30)
     {
         OBJ* p = NULL;
-        for (int i = 0; i < MAX_OBJECTS; i++)
+        for (i = 0; i < MAX_OBJECTS; i++)
         {
             if (objects[i].active && objects[i].type==OBJ_PLAYER)
             {
@@ -2329,7 +2383,7 @@ static void draw_time(float x, float y)
     P8rectfill(x,y,x+32,y+6,0);
     {
         char str[27];
-        snprintf(str, sizeof(str), "%.2i:%.2i:%.2i", h, m, s);
+        SDL_snprintf(str, sizeof(str), "%.2i:%.2i:%.2i", h, m, s);
         P8print(str,x+1,y+1,7);
     }
 }
@@ -2370,9 +2424,11 @@ static bool ice_at(int x,int y,int w,int h)
 
 static bool tile_flag_at(int x,int y,int w,int h,int flag)
 {
-    for (int i=(int)P8max(0,P8flr(x/8)); i <= P8min(15,(x+w-1)/8); i++)
+    int i;
+    for (i=(int)P8max(0,P8flr(x/8)); i <= P8min(15,(x+w-1)/8); i++)
     {
-        for (int j=(int)P8max(0,P8flr(y/8)); j <= P8min(15,(y+h-1)/8); j++)
+        int j;
+        for (j=(int)P8max(0,P8flr(y/8)); j <= P8min(15,(y+h-1)/8); j++)
         {
             if (P8fget(tile_at(i,j),flag))
             {
@@ -2390,9 +2446,11 @@ static int tile_at(int x,int y)
 
 static bool spikes_at(float x,float y,int w,int h,float xspd,float yspd)
 {
-    for (int i=(int)P8max(0,P8flr(x/8)); i <= P8min(15,(x+w-1)/8); i++)
+    int i;
+    for (i=(int)P8max(0,P8flr(x/8)); i <= P8min(15,(x+w-1)/8); i++)
     {
-        for (int j=(int)P8max(0,P8flr(y/8)); j <= P8min(15,(y+h-1)/8); j++)
+        int j;
+        for (j=(int)P8max(0,P8flr(y/8)); j <= P8min(15,(y+h-1)/8); j++)
         {
             int tile=tile_at(i,j);
             if (tile==17 && (P8modulo(y+h-1, 8)>=6 || y+h==j*8+8) && yspd>=0)

@@ -24,7 +24,10 @@ static void ErrLog(char* fmt, ...)
     vfprintf(f, fmt, ap);
     va_end(ap);
 
-    if (f != stderr && f != stdout) fclose(f);
+    if (f != stderr && f != stdout)
+    {
+        fclose(f);
+    }
 }
 
 SDL_Surface* screen  = NULL;
@@ -72,7 +75,7 @@ static void ResetPalette(void)
 {
     //SDL_SetPalette(surf, SDL_PHYSPAL|SDL_LOGPAL, (SDL_Color*)base_palette, 0, 16);
     //memcpy(screen->format->palette->colors, base_palette, 16*sizeof(SDL_Color));
-    memcpy(palette, base_palette, sizeof palette);
+    SDL_memcpy(palette, base_palette, sizeof palette);
 }
 
 static char* GetDataPath(char* path, int n, const char* fname)
@@ -82,7 +85,7 @@ static char* GetDataPath(char* path, int n, const char* fname)
 #else
     char pathsep = '/';
 #endif //_WIN32
-    snprintf(path, n, "data%c%s", pathsep, fname);
+    SDL_snprintf(path, n, "data%c%s", pathsep, fname);
 
     return path;
 }
@@ -101,9 +104,13 @@ static Uint32 getpixel(SDL_Surface *surface, int x, int y)
             return *(Uint16 *)p;
         case 3:
             if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
+            {
                 return p[0] << 16 | p[1] << 8 | p[2];
+            }
             else
+            {
                 return p[0] | p[1] << 8 | p[2] << 16;
+            }
         case 4:
             return *(Uint32 *)p;
         default:
@@ -113,33 +120,43 @@ static Uint32 getpixel(SDL_Surface *surface, int x, int y)
 
 static void loadbmpscale(char* filename, SDL_Surface** s)
 {
-    SDL_Surface* surf = *s;
-    if (surf) SDL_FreeSurface(surf), surf = *s = NULL;
+    SDL_Surface*   surf = *s;
+    char           tmpath[4096];
+    SDL_Surface*   bmp;
+    int            w, h;
+    unsigned char* data;
+    int            y;
 
-    char tmpath[4096];
+    if (surf)
+    {
+        SDL_FreeSurface(surf), surf = *s = NULL;
+    }
 
-    SDL_Surface* bmp = SDL_LoadBMP(GetDataPath(tmpath, sizeof tmpath, filename));
-    if (!bmp)
+    bmp = SDL_LoadBMP(GetDataPath(tmpath, sizeof tmpath, filename));
+    if (! bmp)
     {
         ErrLog("error loading bmp '%s': %s\n", filename, SDL_GetError());
         return;
     }
 
-    int w = bmp->w;
-    int h = bmp->h;
+    w = bmp->w;
+    h = bmp->h;
 
     surf = SDL_CreateRGBSurface(SDL_SWSURFACE, w*scale, h*scale, 8, 0,0,0,0);
     assert(surf != NULL);
-    unsigned char* data = surf->pixels;
+    data = surf->pixels;
     /*memcpy((_S)->format->palette->colors, base_palette, 16*sizeof(SDL_Color));*/
-    for (int y = 0; y < h; y++)
+    for (y = 0; y < h; y++)
     {
-        for (int x = 0; x < w; x++)
+        int x;
+        for (x = 0; x < w; x++)
         {
             unsigned char pix = getpixel(bmp, x, y);
-            for (int i = 0; i < scale; i++)
+            int i;
+            for (i = 0; i < scale; i++)
             {
-                for (int j = 0; j < scale; j++)
+                int j;
+                for (j = 0; j < scale; j++)
                 {
                     data[x*scale+i + (y*scale+j)*w*scale] = pix;
                 }
@@ -153,11 +170,16 @@ static void loadbmpscale(char* filename, SDL_Surface** s)
     *s = surf;
 }
 
-#define LOGLOAD(w) printf("loading %s...", w)
-#define LOGDONE() printf("done\n")
+#define LOGLOAD(w) SDL_Log("loading %s...", w)
+#define LOGDONE() SDL_Log("done")
 
 static void LoadData(void)
 {
+#if ENABLE_AUDIO == 1
+    static const char sndids[] = {0,1,2,3,4,5,6,7,8,9,13,14,15,16,23,35,37,38,40,50,51,54,55};
+    static const char musids[] = {0,10,20,30,40};
+    int iid;
+#endif
     LOGLOAD("gfx.bmp");
     loadbmpscale("gfx.bmp", &gfx);
     LOGDONE();
@@ -167,32 +189,31 @@ static void LoadData(void)
     LOGDONE();
 
 #if ENABLE_AUDIO == 1
-    static const char sndids[] = {0,1,2,3,4,5,6,7,8,9,13,14,15,16,23,35,37,38,40,50,51,54,55};
-    for (int iid = 0; iid < sizeof sndids; iid++)
+    for (iid = 0; iid < sizeof sndids; iid++)
     {
-        int id = sndids[iid];
+        int  id = sndids[iid];
         char fname[20];
-        sprintf(fname, "snd%i.wav", id);
         char path[4096];
+
+        SDL_sprintf(fname, "snd%i.wav", id);
         LOGLOAD(fname);
         GetDataPath(path, sizeof path, fname);
         snd[id] = Mix_LoadWAV(path);
-        if (!snd[id])
+        if (! snd[id])
         {
             ErrLog("snd%i: Mix_LoadWAV: %s\n", id, Mix_GetError());
         }
         LOGDONE();
     }
 
-    static const char musids[] = {0,10,20,30,40};
-
-    for (int iid = 0; iid < sizeof musids; iid++)
+    for (iid = 0; iid < sizeof musids; iid++)
     {
-        int id = musids[iid];
+        int  id = musids[iid];
         char fname[20];
-        sprintf(fname, "mus%i.ogg", id);
-        LOGLOAD(fname);
         char path[4096];
+
+        SDL_sprintf(fname, "mus%i.ogg", id);
+        LOGLOAD(fname);
         GetDataPath(path, sizeof path, fname);
         mus[id/10] = Mix_LoadMUS(path);
         if (!mus[id/10])
@@ -203,6 +224,7 @@ static void LoadData(void)
     }
 #endif
 }
+
 #include "tilemap.h"
 
 static Uint16 buttons_state = 0;
@@ -220,14 +242,15 @@ static void p8_print(const char* str, int x, int y, int col);
 
 //on-screen display (for info, such as loading a state, toggling screenshake, toggling fullscreen, etc)
 static char osd_text[200] = "";
-static int osd_timer = 0;
+static int  osd_timer = 0;
+
 static void OSDset(const char* fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    vsnprintf(osd_text, sizeof osd_text, fmt, ap);
+    SDL_vsnprintf(osd_text, sizeof osd_text, fmt, ap);
     osd_text[sizeof osd_text - 1] = '\0'; //make sure to add NUL terminator in case of truncation
-    printf("%s\n", osd_text);
+    SDL_Log("%s", osd_text);
     osd_timer = 30;
     va_end(ap);
 }
@@ -237,6 +260,10 @@ static void OSDdraw(void)
     if (osd_timer > 0)
     {
         --osd_timer;
+    }
+
+    if (osd_timer > 0)
+    {
         const int x = 4;
         const int y = 120 + (osd_timer < 10 ? 10-osd_timer : 0); //disappear by going below the screen
         p8_rectfill(x-2, y-2, x+4*strlen(osd_text), y+6, 6); //outline
@@ -261,16 +288,20 @@ static FILE*      TAS                = NULL;
 
 int main(int argc, char** argv)
 {
+    int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
+    int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
+#if ENABLE_AUDIO == 1
+    int mixflag = MIX_INIT_OGG;
+    int i;
+#endif
     SDL_CHECK(SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) == 0);
 #if SDL_MAJOR_VERSION >= 2
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
     SDL_GameControllerAddMappingsFromRW(SDL_RWFromFile("gamecontrollerdb.txt", "rb"), 1);
 #endif
-    int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
     SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
     SDL_WM_SetCaption("Celeste", NULL);
 #if ENABLE_AUDIO == 1
-    int mixflag = MIX_INIT_OGG;
     if (Mix_Init(mixflag) != mixflag)
     {
         ErrLog("Mix_Init: %s\n", Mix_GetError());
@@ -288,13 +319,13 @@ int main(int argc, char** argv)
         TAS = fopen(argv[1], "r");
         if (!TAS)
         {
-            printf("couldn't open TAS file '%s': %s\n", argv[1], strerror(errno));
+            SDL_Log("couldn't open TAS file '%s': %s", argv[1], strerror(errno));
         }
     }
 
-    printf("game state size %gkb\n", Celeste_P8_get_state_size()/1024.);
+    SDL_Log("game state size %gkb", Celeste_P8_get_state_size()/1024.);
 
-    printf("now loading...\n");
+    SDL_Log("now loading...");
 
     {
         const unsigned char loading_bmp[] = {
@@ -317,23 +348,23 @@ int main(int argc, char** argv)
             0x00, 0x00, 0xc0, 0x00, 0x10, 0x00, 0x00, 0x00, 0x00, 0x00
         };
 
-        SDL_RWops* rw = SDL_RWFromConstMem(loading_bmp, sizeof loading_bmp);
+        SDL_RWops*   rw      = SDL_RWFromConstMem(loading_bmp, sizeof loading_bmp);
         SDL_Surface* loading = SDL_LoadBMP_RW(rw, 1);
+        SDL_Rect     rc      = {60, 60};
 
         if (!loading)
         {
             goto skip_load;
         }
 
-        SDL_Rect rc = {60, 60};
         SDL_BlitSurface(loading,NULL,screen,&rc);
         SDL_Flip(screen);
         SDL_FreeSurface(loading);
-    } skip_load:
+    }
+skip_load:
 
     LoadData();
 
-    int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
     Celeste_P8_set_call_func(pico8emu);
 
     //for reset
@@ -355,10 +386,10 @@ int main(int argc, char** argv)
 
     Celeste_P8_init();
 
-    printf("ready\n");
+    SDL_Log("ready");
     {
         FILE* start_fullscreen_f = fopen("ccleste-start-fullscreen.txt", "r");
-        const char* start_fullscreen_v = getenv("CCLESTE_START_FULLSCREEN");
+        const char* start_fullscreen_v = SDL_getenv("CCLESTE_START_FULLSCREEN");
         if (start_fullscreen_f || (start_fullscreen_v && *start_fullscreen_v))
         {
             SDL_WM_ToggleFullScreen(screen);
@@ -393,14 +424,14 @@ int main(int argc, char** argv)
     SDL_FreeSurface(gfx);
     SDL_FreeSurface(font);
 #if ENABLE_AUDIO == 1
-    for (int i = 0; i < (sizeof snd)/(sizeof *snd); i++)
+    for (i = 0; i < (sizeof snd)/(sizeof *snd); i++)
     {
         if (snd[i])
         {
             Mix_FreeChunk(snd[i]);
         }
     }
-    for (int i = 0; i < (sizeof mus)/(sizeof *mus); i++)
+    for (i = 0; i < (sizeof mus)/(sizeof *mus); i++)
     {
         if (mus[i])
         {
@@ -675,16 +706,16 @@ static void p8_line(int,int,int,int,unsigned char);
 //coordinates should be scaled already
 static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, SDL_Rect* dstrect, int color, int flipx, int flipy)
 {
+    SDL_Rect fulldst;
+    int      srcx, srcy, w, h;
+
     assert(src && dst && !src->locked && !dst->locked);
     assert(dst->format->BitsPerPixel == 32 && src->format->BitsPerPixel == 8);
-    SDL_Rect fulldst;
     /* If the destination rectangle is NULL, use the entire dest surface */
     if (!dstrect)
     {
         dstrect = (fulldst = (SDL_Rect){0,0,dst->w,dst->h}, &fulldst);
     }
-
-    int srcx, srcy, w, h;
 
     /* clip the source rectangle to the source surface */
     if (srcrect)
@@ -695,9 +726,9 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
         w = srcrect->w;
         if (srcx < 0)
         {
-            w += srcx;
+            w          += srcx;
             dstrect->x -= srcx;
-            srcx = 0;
+            srcx        = 0;
         }
         maxw = src->w - srcx;
         if (maxw < w)
@@ -730,14 +761,14 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
     /* clip the destination rectangle against the clip rectangle */
     {
         SDL_Rect *clip = &dst->clip_rect;
-        int dx, dy;
+        int       dx, dy;
 
         dx = clip->x - dstrect->x;
         if (dx > 0)
         {
-            w -= dx;
+            w          -= dx;
             dstrect->x += dx;
-            srcx += dx;
+            srcx       += dx;
         }
         dx = dstrect->x + w - clip->x - clip->w;
         if (dx > 0)
@@ -761,14 +792,20 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
 
     if (w && h)
     {
-        unsigned char* srcpix = src->pixels;
-        int srcpitch = src->pitch;
-        Uint32* dstpix = dst->pixels;
-#define _blitter(dp, xflip) do                                          \
-            for (int y = 0; y < h; y++) for (int x = 0; x < w; x++) {   \
+        unsigned char* srcpix   = src->pixels;
+        int            srcpitch = src->pitch;
+        Uint32*        dstpix   = dst->pixels;
+        int            x, y;
+#define _blitter(dp, xflip) do \
+            for (y = 0; y < h; y++) \
+            { \
+                for (x = 0; x < w; x++) \
+                { \
                     unsigned char p = srcpix[!xflip ? srcx+x+(srcy+y)*srcpitch : srcx+(w-x-1)+(srcy+y)*srcpitch]; \
                     if (p) dstpix[dstrect->x+x + (dstrect->y+y)*dst->w] = getcolor(dp); \
-                } while(0)
+                } \
+            } \
+            while(0)
         if (color && flipx)
         {
             _blitter(color, 1);
@@ -802,15 +839,23 @@ static void p8_rectfill(int x0, int y0, int x1, int y1, int col)
 
 static void p8_print(const char* str, int x, int y, int col)
 {
-    for (char c = *str; c; c = *(++str))
+    char c;
+    for (c = *str; c; c = *(++str))
     {
-        c &= 0x7F;
-        SDL_Rect srcrc = {8*(c%16), 8*(c/16)};
+        SDL_Rect srcrc;
+        SDL_Rect dstrc;
+        c       &= 0x7F;
+        srcrc.x  = 8*(c%16);
+        srcrc.y  = 8*(c/16);
         srcrc.x *= scale;
         srcrc.y *= scale;
-        srcrc.w = srcrc.h = 8*scale;
+        srcrc.w  = srcrc.h = 8*scale;
 
-        SDL_Rect dstrc = {x*scale, y*scale, scale, scale};
+        dstrc.x  = x*scale;
+        dstrc.y  = y*scale;
+        dstrc.w  = scale;
+        dstrc.h  = scale;
+
         Xblit(font, &srcrc, screen, &dstrc, col, 0,0);
         x += 4;
     }
@@ -818,13 +863,14 @@ static void p8_print(const char* str, int x, int y, int col)
 
 int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
     static int camera_x = 0, camera_y = 0;
+    va_list    args;
+    int        ret      = 0;
+
     if (!enable_screenshake)
     {
         camera_x = camera_y = 0;
     }
 
-    va_list args;
-    int ret = 0;
     va_start(args, call);
 
 #define   INT_ARG() va_arg(args, int)
@@ -846,7 +892,9 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
             if (index == -1) { //stop playing
                 Mix_FadeOutMusic(fade);
                 current_music = NULL;
-            } else if (mus[index/10]) {
+            }
+            else if (mus[index/10])
+            {
                 Mix_Music* musi = mus[index/10];
                 current_music = musi;
                 Mix_FadeInMusic(musi, -1, fade);
@@ -871,8 +919,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 
             if (sprite >= 0)
             {
-                SDL_Rect srcrc =
-                    {
+                SDL_Rect srcrc = {
                     8*(sprite % 16),
                     8*(sprite / 16)
                 };
@@ -1040,14 +1087,15 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
         }
         case CELESTE_P8_MAP: //map(mx,my,tx,ty,mw,mh,mask)
         {
-            int mx = INT_ARG(), my = INT_ARG();
-            int tx = INT_ARG(), ty = INT_ARG();
-            int mw = INT_ARG(), mh = INT_ARG();
+            int mx   = INT_ARG(), my = INT_ARG();
+            int tx   = INT_ARG(), ty = INT_ARG();
+            int mw   = INT_ARG(), mh = INT_ARG();
             int mask = INT_ARG();
+            int x, y;
 
-            for (int x = 0; x < mw; x++)
+            for (x = 0; x < mw; x++)
             {
-                for (int y = 0; y < mh; y++)
+                for (y = 0; y < mh; y++)
                 {
                     int tile = tilemap_data[x + mx + (y + my)*128];
                     //hack
@@ -1105,32 +1153,69 @@ static void p8_line(int x0, int y0, int x1, int y1, unsigned char color)
     CLAMP(y1,0,screen->h);
 
     Uint32 realcolor = getcolor(color);
+    int sx, sy, dx, dy, err, e2;
 
 #undef CLAMP
 #define PLOT(x,y) do {                                                  \
         SDL_FillRect(screen, &(SDL_Rect){x*scale,y*scale,scale,scale}, realcolor); \
-    } while (0)
-    int sx, sy, dx, dy, err, e2;
+    } \
+    while (0)
     dx = abs(x1 - x0);
     dy = abs(y1 - y0);
-    if (!dx && !dy) return;
+    if (!dx && !dy)
+    {
+        return;
+    }
 
-    if (x0 < x1) sx = 1; else sx = -1;
-    if (y0 < y1) sy = 1; else sy = -1;
+    if (x0 < x1)
+    {
+        sx = 1;
+    }
+    else
+    {
+        sx = -1;
+    }
+    if (y0 < y1)
+    {
+        sy = 1;
+    }
+    else
+    {
+        sy = -1;
+    }
     err = dx - dy;
-    if (!dy && !dx) return;
-    else if (!dx) { //vertical line
-        for (int y = y0; y != y1; y += sy) PLOT(x0,y);
-    } else if (!dy) { //horizontal line
-        for (int x = x0; x != x1; x += sx) PLOT(x,y0);
-    } while (x0 != x1 || y0 != y1) {
+    if (!dy && !dx)
+    {
+        return;
+    }
+    else if (!dx) //vertical line
+    {
+        int y;
+        for (y = y0; y != y1; y += sy)
+        {
+            PLOT(x0,y);
+        }
+    }
+    else if (!dy) //horizontal line
+    {
+        int x;
+        for (x = x0; x != x1; x += sx)
+        {
+            PLOT(x,y0);
+        }
+    }
+
+    while (x0 != x1 || y0 != y1)
+    {
         PLOT(x0, y0);
         e2 = 2 * err;
-        if (e2 > -dy) {
+        if (e2 > -dy)
+        {
             err -= dy;
             x0 += sx;
         }
-        if (e2 < dx) {
+        if (e2 < dx)
+        {
             err += dx;
             y0 += sy;
         }
@@ -1173,19 +1258,26 @@ static const Uint16 stick_deadzone = 32767 / 2; //about half
 
 static void ReadGamepadInput(Uint16* out_buttons)
 {
-    static _Bool read_config = 0;
+    static _Bool               read_config = 0;
+    static SDL_GameController* controller  = NULL;
+    Sint16                     x_axis;
+    Sint16                     y_axis;
+    int                        i;
+
     if (!read_config)
     {
+        FILE*       cfg;
+        const char* cfg_file_path = SDL_getenv("CCLESTE_INPUT_CFG_PATH");
+
         read_config = 1;
-        const char* cfg_file_path = getenv("CCLESTE_INPUT_CFG_PATH");
+
         if (!cfg_file_path)
         {
             cfg_file_path  = "ccleste-input-cfg.txt";
         }
-        FILE* cfg = fopen(cfg_file_path, "r");
+        cfg = fopen(cfg_file_path, "r");
         if (cfg)
         {
-            int i;
             for (i = 0; i < sizeof controller_mappings / sizeof *controller_mappings - 1;)
             {
                 char line[150], p8btn[31], sdlbtn[31];
@@ -1201,12 +1293,13 @@ static void ReadGamepadInput(Uint16* out_buttons)
                 }
                 else if (sscanf(line, "%30s %30s", p8btn, sdlbtn) == 2)
                 {
+                    int btn;
                     p8btn[sizeof p8btn - 1] = sdlbtn[sizeof sdlbtn - 1] = 0;
-                    for (int btn = 0; btn < sizeof pico8_btn_names / sizeof *pico8_btn_names; btn++)
+                    for (btn = 0; btn < sizeof pico8_btn_names / sizeof *pico8_btn_names; btn++)
                     {
                         if (!SDL_strcasecmp(pico8_btn_names[btn], p8btn))
                         {
-                            printf("input cfg: %s -> %s\n", p8btn, sdlbtn);
+                            SDL_Log("input cfg: %s -> %s", p8btn, sdlbtn);
                             controller_mappings[i].sdl_btn = SDL_GameControllerGetButtonFromString(sdlbtn);
                             controller_mappings[i].pico8_btn = btn;
                             i++;
@@ -1222,9 +1315,10 @@ static void ReadGamepadInput(Uint16* out_buttons)
             cfg = fopen(cfg_file_path, "w");
             if (cfg)
             {
-                printf("creating ccleste-input-cfg.txt with default button mappings\n");
+                struct mapping* mapping;
+                SDL_Log("creating ccleste-input-cfg.txt with default button mappings");
                 fprintf(cfg, "# in-game \tcontroller\n");
-                for (struct mapping* mapping = controller_mappings; mapping->pico8_btn != 0xFF; mapping++)
+                for (mapping = controller_mappings; mapping->pico8_btn != 0xFF; mapping++)
                 {
                     fprintf(cfg, "%s \t%s\n", pico8_btn_names[mapping->pico8_btn], SDL_GameControllerGetStringForButton(mapping->sdl_btn));
                 }
@@ -1233,10 +1327,10 @@ static void ReadGamepadInput(Uint16* out_buttons)
         }
     }
 
-    static SDL_GameController* controller = NULL;
     if (! controller)
     {
         static int tries_left = 30;
+
         if (! tries_left)
         {
             return;
@@ -1245,8 +1339,8 @@ static void ReadGamepadInput(Uint16* out_buttons)
 
         //use first available controller
         int count = SDL_NumJoysticks();
-        printf("sdl reports %i controllers\n", count);
-        for (int i = 0; i < count; i++)
+        SDL_Log("sdl reports %i controllers", count);
+        for (i = 0; i < count; i++)
         {
             if (SDL_IsGameController(i))
             {
@@ -1256,28 +1350,30 @@ static void ReadGamepadInput(Uint16* out_buttons)
                     fprintf(stderr, "error opening controller: %s\n", SDL_GetError());
                     return;
                 }
-                printf("picked controller: '%s'\n", SDL_GameControllerName(controller));
+                SDL_Log("picked controller: '%s'", SDL_GameControllerName(controller));
                 break;
             }
         }
     }
 
     //pico 8 buttons and pseudo buttons
-    for (int i = 0; i < sizeof controller_mappings / sizeof *controller_mappings; i++)
+    for (i = 0; i < sizeof controller_mappings / sizeof *controller_mappings; i++)
     {
         struct mapping mapping = controller_mappings[i];
+        _Bool          pressed;
+        Uint16         mask;
         if (mapping.pico8_btn == 0xFF)
         {
             break;
         }
-        _Bool pressed = SDL_GameControllerGetButton(controller, mapping.sdl_btn);
-        Uint16 mask = ~(1 << mapping.pico8_btn);
+        pressed      = SDL_GameControllerGetButton(controller, mapping.sdl_btn);
+        mask         = ~(1 << mapping.pico8_btn);
         *out_buttons = (*out_buttons & mask) | (pressed << mapping.pico8_btn);
     }
 
     //joystick -> dpad input
-    Sint16 x_axis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
-    Sint16 y_axis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
+    x_axis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTX);
+    y_axis = SDL_GameControllerGetAxis(controller, SDL_CONTROLLER_AXIS_LEFTY);
     if (x_axis < -stick_deadzone) //left
     {
         *out_buttons |= (1 << 0);
