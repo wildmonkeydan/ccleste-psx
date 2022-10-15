@@ -53,11 +53,16 @@ add_compile_definitions(
   ${PROJECT_TITLE}
   _CRT_SECURE_NO_WARNINGS)
 
-target_link_libraries(${PROJECT_TITLE} PRIVATE ${SDL2_LIBRARIES})
-
 if(NOT BUILD_FOR_NOKIA_NGAGE AND CELESTE_P8_ENABLE_AUDIO)
-  target_link_libraries(${PROJECT_TITLE} PRIVATE SDL2_mixer::SDL2_mixer)
+  if(TARGET SDL2_mixer::SDL2_mixer-static)
+    set(SDL2_MIXER_LIBS SDL2_mixer::SDL2_mixer-static)
+  else()
+    set(SDL2_MIXER_LIBS SDL2_mixer::SDL2_mixer)
+  endif()
+  target_link_libraries(${PROJECT_TITLE} PRIVATE ${SDL2_MIXER_LIBS})
 endif()
+
+target_link_libraries(${PROJECT_TITLE} PRIVATE ${SDL2_LIBRARIES})
 
 if(NINTENDO_3DS)
   set(ROMFS_DIR "${CMAKE_CURRENT_BINARY_DIR}/romfs")
