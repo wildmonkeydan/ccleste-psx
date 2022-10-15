@@ -84,10 +84,10 @@ make
 
 ## Credits
 
-Sound wave files are taken from
-[https://github.com/JeffRuLz/Celeste-Classic-GBA/tree/master/maxmod_data](https://github.com/JeffRuLz/Celeste-Classic-GBA/tree/master/maxmod_data),
-music *.ogg files were obtained by converting the .wav dumps from
-PICO-8, which I did using audacity & ffmpeg.
+Sound wave files are taken from the
+[Celeste-Classic-GBA](https://github.com/JeffRuLz/Celeste-Classic-GBA/tree/master/maxmod_data)
+project, music *.ogg files were obtained by converting the .wav dumps
+from PICO-8, which I did using audacity & ffmpeg.
 
 All credit for the original game goes to the original developers (Maddy
 Thorson & Noel Berry).
