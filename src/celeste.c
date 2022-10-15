@@ -19,9 +19,10 @@
 
 #include "SDL.h"
 #define snprintf SDL_snprintf
-#define float float
+#endif
 
-#elif defined CELESTE_P8_FIXEDP
+
+#if defined CELESTE_P8_FIXEDP
 
 //very ugly hack:
 //in order to switch to fixed point type and arithmetic, without having
@@ -495,14 +496,12 @@ static void PRELUDE_initparticles()
     int i;
     for (i=0; i<=24; i++)
     {
-        particles[i] = (PARTICLE) {
-            .x   = P8rnd(128),
-            .y   = P8rnd(128),
-            .s   = 0+P8flr(P8rnd(5)/4),
-            .spd = 0.25f+P8rnd(5),
-            .off = P8rnd(1),
-            .c   = 6+P8flr(0.5+P8rnd(1))
-        };
+        particles[i].x   = P8rnd(128);
+        particles[i].y   = P8rnd(128);
+        particles[i].s   = 0+P8flr(P8rnd(5)/4);
+        particles[i].spd = 0.25f+P8rnd(5);
+        particles[i].off = P8rnd(1);
+        particles[i].c   = 6+P8flr(0.5+P8rnd(1));
     }
 }
 
@@ -1751,12 +1750,11 @@ static void BIG_CHEST_draw(OBJ* this)
         flash_bg=true;
         if (this->timer<=45 && this->particle_count<50)
         {
-            this->particles[this->particle_count++] = (PARTICLE){
-                .x=1+P8rnd(14),
-                .y=0,
-                .spd=8+P8rnd(8),
-                .h=32+P8rnd(32)
-            };
+            this->particles[this->particle_count].x=1+P8rnd(14);
+            this->particles[this->particle_count].y=0;
+            this->particles[this->particle_count].spd=8+P8rnd(8);
+            this->particles[this->particle_count].h=32+P8rnd(32);
+            this->particle_count++;
         }
         if (this->timer<0)
         {
@@ -1979,18 +1977,13 @@ static void kill_player(OBJ* obj)
     for (dir=0; dir <= 7; dir+=1)
     {
         float angle=(dir/8);
-        dead_particles[dead_particles_count++] = (PARTICLE)
-            {
-            .active = true,
-            .x      = obj->x+4,
-            .y      = obj->y+4,
-            .t      = 10,
-            .spd2   = (VEC)
-            {
-                .x = P8sin(angle)*3,
-                .y = P8cos(angle)*3
-            }
-        };
+        dead_particles[dead_particles_count].active = true;
+        dead_particles[dead_particles_count].x      = obj->x+4;
+        dead_particles[dead_particles_count].y      = obj->y+4;
+        dead_particles[dead_particles_count].t      = 10;
+        dead_particles[dead_particles_count].spd2.x = P8sin(angle)*3;
+        dead_particles[dead_particles_count].spd2.y = P8cos(angle)*3;
+        dead_particles_count++;
         restart_room();
     }
     destroy_object(obj); //LEMON: moved here to avoid using ->x and ->y from dead object
