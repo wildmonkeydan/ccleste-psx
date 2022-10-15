@@ -89,5 +89,9 @@ Sound wave files are taken from the
 project, music *.ogg files were obtained by converting the *.wav dumps
 from PICO-8, which I did using audacity & ffmpeg.
 
+The frame for the N-Gage version is based on [Mountain at Dusk
+Background](https://opengameart.org/content/mountain-at-dusk-background)
+by ansimuz.
+
 All credit for the original game goes to the original developers (Maddy
 Thorson & Noel Berry).

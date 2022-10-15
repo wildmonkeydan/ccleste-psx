@@ -14,6 +14,10 @@ static SDL_Texture*  sdl2_screen_tex = NULL;
 static SDL_Window*   sdl2_window     = NULL;
 static SDL_Renderer* sdl2_rendr      = NULL;
 
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG)
+static SDL_Texture* ngage_frame = NULL;
+#endif
+
 static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flags)
 {
 #if SDL_BYTEORDER == SDL_BIG_ENDIAN
@@ -55,6 +59,12 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
         if (0)
         {
         die:
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG)
+            if (ngage_frame)
+            {
+                SDL_DestroyTexture(ngage_frame);
+            }
+#endif
             if (sdl2_window)
             {
                 SDL_DestroyWindow(sdl2_window);
@@ -72,6 +82,41 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
     }
     sdl2_screen = SDL_CreateRGBSurface(0, width, height, 32, rmask, gmask, bmask, amask);
     assert(sdl2_screen && sdl2_screen->format->BitsPerPixel == bpp);
+
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG)
+    {
+#if defined (__NGAGE__)
+        SDL_Surface* frame_sf = SDL_LoadBMP("E:\\System\\Apps\\Celeste\\data\\frame.bmp");
+#else
+        SDL_Surface* frame_sf = SDL_LoadBMP("frame.bmp");
+#endif
+
+        if (! frame_sf)
+        {
+            SDL_Log("Failed to load image: %s", SDL_GetError());
+        }
+        else
+        {
+            if (0 != SDL_SetColorKey(frame_sf, SDL_TRUE, SDL_MapRGB(frame_sf->format, 0xff, 0x00, 0xff)))
+            {
+                SDL_Log("Failed to set color key for frame.bmp: %s", SDL_GetError());
+            }
+            if (0 != SDL_SetSurfaceRLE(frame_sf, 1))
+            {
+                SDL_Log("Could not enable RLE for surface frame.bmp: %s", SDL_GetError());
+            }
+
+            ngage_frame = SDL_CreateTextureFromSurface(sdl2_rendr, frame_sf);
+            if (! ngage_frame)
+            {
+                SDL_Log("Could not create texture from surface: %s", SDL_GetError());
+            }
+        }
+        SDL_FreeSurface(frame_sf);
+        SDL_RenderCopy(sdl2_rendr, ngage_frame, NULL, NULL);
+        SDL_RenderPresent(sdl2_rendr);
+    }
+#endif
     return sdl2_screen;
 }
 
@@ -118,8 +163,9 @@ static void SDL_Flip(SDL_Surface* screen)
     assert(sdl2_window != NULL);
     SDL_UpdateTexture(sdl2_screen_tex, NULL, screen->pixels, screen->pitch);
     SDL_SetRenderDrawColor(sdl2_rendr, 0, 0, 0, 255);
-    SDL_RenderClear(sdl2_rendr);
+    //SDL_RenderClear(sdl2_rendr);
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
+//    SDL_RenderCopy(sdl2_rendr, ngage_frame, NULL, NULL);
     SDL_RenderCopy(sdl2_rendr, sdl2_screen_tex, &source, &dest);
 #else
     SDL_RenderCopy(sdl2_rendr, sdl2_screen_tex, NULL, NULL);

@@ -4,7 +4,7 @@
 &EN
 
 ; standard SIS file header
-#{"Celeste"},(0x10005731),1,0,0
+#{"Celeste"},(0x10005731),1,1,0
 
 ;Supports Series 60 v 0.9
 (0x101F6F88), 0, 0, 0, {"Series60ProductID"}
@@ -14,5 +14,6 @@
 "..\sis\Celeste.aif"-"E:\System\Apps\Celeste\Celeste.aif"
 "..\sis\Celeste.app"-"E:\System\Apps\Celeste\Celeste.app"
 "..\sis\Celeste.rsc"-"E:\System\Apps\Celeste\Celeste.rsc"
-"..\sis\font.bmp"-"E:\System\Apps\Celeste\data\font.bmp"
-"..\sis\gfx.bmp"-"E:\System\Apps\Celeste\data\gfx.bmp"
+"..\data\font.bmp"-"E:\System\Apps\Celeste\data\font.bmp"
+"..\data\gfx.bmp"-"E:\System\Apps\Celeste\data\gfx.bmp"
+"..\data\frame.bmp"-"E:\System\Apps\Celeste\data\frame.bmp"
