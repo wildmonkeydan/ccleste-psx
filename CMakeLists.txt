@@ -4,14 +4,17 @@
 
 cmake_minimum_required(VERSION 3.10)
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+
 # Use CMake or Visual Studio to enable these settings.
 option(BUILD_FOR_NOKIA_NGAGE      "Build for the Nokia N-Gage"                           OFF)
 option(NGAGE_DEBUG                "Enable Nokia N-Gage specific adjustments"             OFF)
 option(CELESTE_P8_FIXEDP          "Use fixed-point arithmetic"                           OFF)
 option(CELESTE_P8_HACKED_BALLOONS "Always expand the baloon hitbox to their full range." OFF)
+option(CELESTE_P8_ENABLE_AUDIO    "Enable SDL2_mixer audio output."                      OFF)
 
 if(BUILD_FOR_NOKIA_NGAGE)
-  include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Nokia_N-Gage.cmake)
+  include(Nokia_N-Gage)
   return()
 endif()
 
@@ -20,84 +23,25 @@ project(Celeste C CXX)
 set(CMAKE_C_STANDARD 90)
 set(CMAKE_CXX_STANDARD 11)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/project_config.cmake)
+set(EXPORT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/export)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${EXPORT_DIR})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${EXPORT_DIR})
 
-include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
+include(project_config)
+include(get_sdl2)
 
-# SDL2
-set(SDL2_VERSION "2.24.0")
+get_sdl2("2.24.1")
 
-if (WIN32)
-  if (CMAKE_BUILD_TYPE MATCHES Release)
-    set(GUI_TYPE WIN32)
-  endif()
+if(NOT BUILD_FOR_NOKIA_NGAGE AND CELESTE_P8_ENABLE_AUDIO)
+  get_sdl2_mixer("2.6.2")
+endif()
 
-  set(SDL2_DEVEL_PKG SDL2-devel-${SDL2_VERSION}-VC.zip)
-  set(SDL2_PLATFORM "x64")
+add_executable(${PROJECT_TITLE} ${project_sources})
 
-  if(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    set(SDL2_PLATFORM "x86")
-  endif()
-
-  set(SDL2_PATH ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2-${SDL2_VERSION}_${SDL2_PLATFORM})
-
-  ExternalProject_Add(SDL2_devel
-    URL https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/${SDL2_DEVEL_PKG}
-    URL_HASH SHA1=8a54459189e88c30ba024ee5f18ce4b1a5d1d9e7
-    DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps
-    DOWNLOAD_NO_PROGRESS true
-    TLS_VERIFY true
-    SOURCE_DIR ${SDL2_PATH}/
-    BUILD_BYPRODUCTS ${SDL2_PATH}/lib/${SDL2_PLATFORM}/SDL2.lib
-    BUILD_BYPRODUCTS ${SDL2_PATH}/lib/${SDL2_PLATFORM}/SDL2main.lib
-
-    BUILD_COMMAND ${CMAKE_COMMAND} -E echo "Skipping build step."
-
-    INSTALL_COMMAND ${CMAKE_COMMAND} -E copy
-    ${SDL2_PATH}/lib/${SDL2_PLATFORM}/SDL2.dll ${CMAKE_CURRENT_SOURCE_DIR}/export
-
-    PATCH_COMMAND ${CMAKE_COMMAND} -E copy
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/SDL2_devel.cmake" ${SDL2_PATH}/CMakeLists.txt)
-
-  set(SDL2_INCLUDE_DIR ${SDL2_PATH}/include)
-  set(SDL2_LIBRARY     ${SDL2_PATH}/lib/${SDL2_PLATFORM}/SDL2.lib)
-  set(SDL2MAIN_LIBRARY ${SDL2_PATH}/lib/${SDL2_PLATFORM}/SDL2main.lib)
-endif(WIN32)
-
-if(UNIX)
-  set(SDL2_PATH      ${CMAKE_CURRENT_SOURCE_DIR}/deps/SDL2-${SDL2_VERSION})
-  set(SDL2_DEVEL_PKG SDL2-${SDL2_VERSION}.tar.gz)
-
-  ExternalProject_Add(SDL2_devel
-    URL https://github.com/libsdl-org/SDL/releases/download/release-${SDL2_VERSION}/${SDL2_DEVEL_PKG}
-    URL_HASH SHA1=04d7768f4418ba03537ef14a86a0c1c45582f5c3
-    DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/deps
-    DOWNLOAD_NO_PROGRESS true
-    TLS_VERIFY true
-    SOURCE_DIR ${SDL2_PATH}/
-    BINARY_DIR ${SDL2_PATH}_build
-    BUILD_BYPRODUCTS ${SDL2_PATH}_build/libSDL2.a
-    BUILD_BYPRODUCTS ${SDL2_PATH}_build/libSDL2main.a
-
-    INSTALL_COMMAND ${CMAKE_COMMAND} -E echo "Skipping install step."
-    PATCH_COMMAND   ${CMAKE_COMMAND} -E echo "Skipping patch step.")
-
-  set(SDL2_INCLUDE_DIR ${SDL2_PATH}/include)
-  set(SDL2_LIBRARY     ${SDL2_PATH}_build/libSDL2.a)
-  set(SDL2MAIN_LIBRARY ${SDL2_PATH}_build/libSDL2main.a)
-endif(UNIX)
-
-include_directories(
+target_include_directories(
+  ${PROJECT_TITLE} 
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
-  SYSTEM ${SDL2_INCLUDE_DIR})
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG   ${CMAKE_CURRENT_SOURCE_DIR}/export)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/export)
-
-add_executable(
-  ${PROJECT_TITLE}
-  ${GUI_TYPE}
-  ${project_sources})
+  PRIVATE ${SDL2_INCLUDE_DIR})
 
 if(NGAGE_DEBUG)
   add_compile_definitions(
@@ -109,26 +53,26 @@ add_compile_definitions(
   ${PROJECT_TITLE}
   _CRT_SECURE_NO_WARNINGS)
 
-add_dependencies(
-  ${PROJECT_TITLE}
-  SDL2_devel)
+target_link_libraries(${PROJECT_TITLE} PRIVATE ${SDL2_LIBRARIES})
 
-if(WIN32)
-  target_link_libraries(
-    ${PROJECT_TITLE}
-    ${SDL2_LIBRARY}
-    ${SDL2MAIN_LIBRARY})
-endif(WIN32)
+if(NOT BUILD_FOR_NOKIA_NGAGE AND CELESTE_P8_ENABLE_AUDIO)
+  target_link_libraries(${PROJECT_TITLE} PRIVATE SDL2_mixer::SDL2_mixer)
+endif()
 
-if(UNIX)
-  target_link_libraries(
+if(NINTENDO_3DS)
+  set(ROMFS_DIR "${CMAKE_CURRENT_BINARY_DIR}/romfs")
+  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${ROMFS_DIR})
+  set(SMDH_FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_TITLE}.smdh")
+  ctr_generate_smdh("${SMDH_FILE}"
+    NAME "Celeste"
+    DESCRIPTION "SDL Port of the original Celeste"
+    AUTHOR "Original port by: Maddy Thorson & Noel Berry"
+    ICON "${CMAKE_CURRENT_SOURCE_DIR}/icon.png")
+  ctr_create_3dsx(
     ${PROJECT_TITLE}
-    ${SDL2_LIBRARY}
-    ${SDL2MAIN_LIBRARY}
-    dl
-    m
-    pthread)
-endif(UNIX)
+    ROMFS "${ROMFS_DIR}"
+    SMDH "${SMDH_FILE}")
+endif()
 
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
   set(COMPILE_OPTIONS
