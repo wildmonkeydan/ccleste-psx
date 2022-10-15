@@ -1,6 +1,8 @@
 macro(get_sdl2 version)
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+    cmake_policy(SET CMP0135 NEW)
+  endif()
   include(FetchContent)
-  cmake_policy(SET CMP0135 NEW)
   if(MSVC OR (WIN32 AND CMAKE_C_COMPILER_ID MATCHES "Clang"))
     FetchContent_Declare(
       SDL2

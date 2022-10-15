@@ -41,7 +41,7 @@ add_executable(${PROJECT_TITLE} ${project_sources})
 target_include_directories(
   ${PROJECT_TITLE} 
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
-  PRIVATE ${SDL2_INCLUDE_DIR})
+  PRIVATE ${SDL2_INCLUDE_DIRS})
 
 if(NGAGE_DEBUG)
   add_compile_definitions(
