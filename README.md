@@ -3,7 +3,7 @@
 [![CMake](https://github.com/mupfdev/ccleste/actions/workflows/cmake.yml/badge.svg)](https://github.com/mupfdev/ccleste/actions/workflows/cmake.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/9ef529e6a22d409089bc35f1566fa269)](https://www.codacy.com/gh/mupfdev/ccleste/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mupfdev/ccleste&amp;utm_campaign=Badge_Grade)
 
-![screenshot](https://raw.githubusercontent.com/lemon-sherbet/ccleste/master/media/screenshot.png)
+[![Celeste](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot.png)](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot.png?raw=true "Celeste")
 
 This C source port of the [original
 Celeste](https://www.lexaloffle.com/bbs/?tid=2145) for the PICO-8 was
