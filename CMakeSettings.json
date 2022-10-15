@@ -25,6 +25,11 @@
           "name": "CELESTE_P8_FIXEDP",
           "value": "True",
           "type": "BOOL"
+        },
+        {
+          "name": "CELESTE_P8_HACKED_BALLOONS",
+          "value": "True",
+          "type": "BOOL"
         }
       ]
     },
@@ -51,6 +56,11 @@
         },
         {
           "name": "CELESTE_P8_FIXEDP",
+          "value": "True",
+          "type": "BOOL"
+        },
+        {
+          "name": "CELESTE_P8_HACKED_BALLOONS",
           "value": "True",
           "type": "BOOL"
         }

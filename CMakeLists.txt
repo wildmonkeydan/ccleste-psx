@@ -4,6 +4,11 @@
 
 cmake_minimum_required(VERSION 3.10)
 
+# Use CMake or Visual Studio to enable these settings.
+option(BUILD_FOR_NOKIA_NGAGE      "Build for the Nokia N-Gage"                           OFF)
+option(CELESTE_P8_FIXEDP          "Use fixed-point arithmetic"                           OFF)
+option(CELESTE_P8_HACKED_BALLOONS "Always expand the baloon hitbox to their full range." OFF)
+
 if(BUILD_FOR_NOKIA_NGAGE)
   include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Nokia_N-Gage.cmake)
   return()

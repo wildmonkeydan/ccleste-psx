@@ -1280,7 +1280,10 @@ static void BALLOON_update(OBJ* this)
         this->offset+=0.01;
 #ifdef CELESTE_P8_HACKED_BALLOONS
         //hacked balloons: constant y coord and hitbox. for TASes
-        this->hitbox=(HITBOX){.x=-1,.y=-3,.w=10,.h=14};
+        this->hitbox.x = -1;
+        this->hitbox.y = -3;
+        this->hitbox.w = 10;
+        this->hitbox.h = 14;
 #else
         this->y=this->start+P8sin(this->offset)*2;
 #endif
