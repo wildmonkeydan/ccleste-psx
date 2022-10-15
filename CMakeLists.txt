@@ -54,11 +54,6 @@ add_compile_definitions(
   _CRT_SECURE_NO_WARNINGS)
 
 if(NOT BUILD_FOR_NOKIA_NGAGE AND CELESTE_P8_ENABLE_AUDIO)
-  if(TARGET SDL2_mixer::SDL2_mixer-static)
-    set(SDL2_MIXER_LIBS SDL2_mixer::SDL2_mixer-static)
-  else()
-    set(SDL2_MIXER_LIBS SDL2_mixer::SDL2_mixer)
-  endif()
   target_link_libraries(${PROJECT_TITLE} PRIVATE ${SDL2_MIXER_LIBS})
 endif()
 

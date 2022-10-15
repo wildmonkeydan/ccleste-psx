@@ -33,8 +33,7 @@ macro(get_sdl2 version)
     FetchContent_MakeAvailable(SDL2)
     find_package(SDL2 CONFIG REQUIRED PATHS ${sdl2_SOURCE_DIR} NO_DEFAULT_PATH)
     get_target_property(SDL2_DLL SDL2::SDL2 IMPORTED_LOCATION)
-    file(COPY_FILE ${SDL2_DLL} ${EXPORT_DIR}/SDL2.dll
-         ONLY_IF_DIFFERENT)
+    file(COPY_FILE ${SDL2_DLL} ${EXPORT_DIR}/SDL2.dll ONLY_IF_DIFFERENT)
   endif()
 endmacro(get_sdl2)
 
@@ -72,5 +71,11 @@ macro(get_sdl2_mixer version)
     get_target_property(SDL2_mixer_DLL SDL2_mixer::SDL2_mixer IMPORTED_LOCATION)
     file(COPY_FILE ${SDL2_mixer_DLL} ${EXPORT_DIR}/SDL2_mixer.dll
          ONLY_IF_DIFFERENT)
+  endif()
+
+  if(TARGET SDL2_mixer::SDL2_mixer-static)
+    set(SDL2_MIXER_LIBS SDL2_mixer::SDL2_mixer-static)
+  else()
+    set(SDL2_MIXER_LIBS SDL2_mixer::SDL2_mixer)
   endif()
 endmacro(get_sdl2_mixer)
