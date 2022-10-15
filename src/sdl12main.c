@@ -276,8 +276,8 @@ static void OSDdraw(void)
     {
         const int x = 4;
         const int y = 120 + (osd_timer < 10 ? 10-osd_timer : 0); //disappear by going below the screen
-        p8_rectfill(x-2, y-2, x+4*SDL_strlen(osd_text), y+6, 6); //outline
-        p8_rectfill(x-1, y-1, x+4*SDL_strlen(osd_text)-1, y+5, 0);
+        p8_rectfill(x-2, y-2, x+4*(int)SDL_strlen(osd_text), y+6, 6); //outline
+        p8_rectfill(x-1, y-1, x+4*(int)SDL_strlen(osd_text)-1, y+5, 0);
         p8_print(osd_text, x, y, 7);
     }
 }

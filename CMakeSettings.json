@@ -20,6 +20,11 @@
           "name": "SDL2_LIBRARY",
           "value": "${projectDir}\\deps\\SDL2-2.24.0_x64\\lib\\x64\\SDL2.lib",
           "type": "FILEPATH"
+        },
+        {
+          "name": "CELESTE_P8_FIXEDP",
+          "value": "True",
+          "type": "BOOL"
         }
       ]
     },
@@ -43,6 +48,11 @@
           "name": "SDL2_LIBRARY",
           "value": "${projectDir}\\deps\\SDL2-2.24.0_x64\\lib\\x64\\SDL2.lib",
           "type": "FILEPATH"
+        },
+        {
+          "name": "CELESTE_P8_FIXEDP",
+          "value": "True",
+          "type": "BOOL"
         }
       ]
     },

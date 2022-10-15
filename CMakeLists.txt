@@ -12,6 +12,7 @@ endif()
 project(Celeste C CXX)
 
 set(CMAKE_C_STANDARD 90)
+set(CMAKE_CXX_STANDARD 98)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/project_config.cmake)
 
@@ -91,6 +92,10 @@ add_executable(
   ${PROJECT_TITLE}
   ${GUI_TYPE}
   ${project_sources})
+
+add_compile_definitions(
+  ${PROJECT_TITLE}
+  _CRT_SECURE_NO_WARNINGS)
 
 add_dependencies(
   ${PROJECT_TITLE}

@@ -50,7 +50,7 @@ struct _fix32 {
     inline uint16_t frac() { return static_cast<uint16_t>(this->n); }
 
     // T -> _fix32
-    template <typename T> static inline _fix32 from(T n) { return _fix32::from_bits(n * T(FACTOR)); }
+    template <typename T> static inline _fix32 from(T n) { return _fix32::from_bits((int32_t)(n * T(FACTOR))); }
     // _fix32 -> T
     template <typename T> inline T to() const { return T(this->n) / T(FACTOR); }
 
@@ -72,7 +72,7 @@ struct _fix32 {
     inline friend _fix32 operator /(_fix32 a, _fix32 b) { //pico8 decomp'd
         if (b == 0) return a > 0 ? FACTOR : -FACTOR; // +inf / -inf
         if (b.frac() == 0 && ((int)b > 0)) {
-            return _fix32::from_bits(int64_t(a.n) / int64_t(b));
+            return _fix32::from_bits((int32_t)(int64_t(a.n) / int64_t(b)));
         }
         return from_bits((int64_t(a.n)*FACTOR) / int64_t(b.n));
     }
@@ -324,7 +324,7 @@ static inline bool solid_at(float x,float y,float w,float h) { return solid_at(i
 typedef struct {float x,y;} VEC;
 typedef struct {int x,y;} VECI;
 
-static VECI room                   = { .x = 0, .y = 0 };
+static VECI room                   = { 0 };
 //static int num_objects           = 0;
 static int  freeze                 = 0;
 static int  shake                  = 0;
@@ -468,12 +468,10 @@ static void PRELUDE_initclouds()
     int i;
     for (i=0; i<=16; i++)
     {
-        clouds[i] = (CLOUD){
-            .x   = P8rnd(128),
-            .y   = P8rnd(128),
-            .spd = 1+P8rnd(4),
-            .w   = 32+P8rnd(32),
-        };
+        clouds[i].x   = P8rnd(128);
+        clouds[i].y   = P8rnd(128);
+        clouds[i].spd = 1+P8rnd(4);
+        clouds[i].w   = 32+P8rnd(32);
     }
 }
 
@@ -493,14 +491,12 @@ static void PRELUDE_initparticles()
     int i;
     for (i=0; i<=24; i++)
     {
-        particles[i] = (PARTICLE) {
-            .x   = P8rnd(128),
-            .y   = P8rnd(128),
-            .s   = 0+P8flr(P8rnd(5)/4),
-            .spd = 0.25f+P8rnd(5),
-            .off = P8rnd(1),
-            .c   = 6+P8flr(0.5+P8rnd(1))
-        };
+        particles[i].x   = P8rnd(128);
+        particles[i].y   = P8rnd(128);
+        particles[i].s   = 0+P8flr(P8rnd(5)/4);
+        particles[i].spd = 0.25f+P8rnd(5);
+        particles[i].off = P8rnd(1);
+        particles[i].c   = 6+P8flr(0.5+P8rnd(1));
     }
 }
 
@@ -609,13 +605,13 @@ struct objprop
 static const struct objprop OBJTYPE_prop[] =
 {
 #define X(name,t,has_init,has_update,has_draw,_if_not_fruit) \
-    [OBJ_##name] = {                                         \
-        .tile = t,                                           \
-        .init = (obj_callback_t)name##_init,                 \
-        .update = (obj_callback_t)name##_update,             \
-        .draw = (obj_callback_t)name##_draw,                 \
-        .nam = #name,                                        \
-        .if_not_fruit = _if_not_fruit                        \
+    {                                  \
+        t,                             \
+        (obj_callback_t)name##_init,   \
+        (obj_callback_t)name##_update, \
+        (obj_callback_t)name##_draw,   \
+        #name,                         \
+        _if_not_fruit                  \
     },
     OBJ_PROP_LIST()
 #undef X
@@ -624,9 +620,7 @@ static const struct objprop OBJTYPE_prop[] =
 
 #define OBJ_PROP(o) OBJTYPE_prop[(o)->type]
 
-static OBJ objects[MAX_OBJECTS] = {
-    { .active = false }
-};
+static OBJ objects[MAX_OBJECTS] = { 0 };
 
 static void create_hair(OBJ* obj);
 static void set_hair_color(int c);
@@ -769,9 +763,14 @@ static void PLAYER_init(OBJ* this)
     this->djump            = max_djump;
     this->dash_time        = 0;
     this->dash_effect_time = 0;
-    this->dash_target      = (VEC){.x=0,.y=0};
-    this->dash_accel       = (VEC){.x=0,.y=0};
-    this->hitbox           = (HITBOX){.x=1,.y=3,.w=6,.h=5};
+    this->dash_target.x    = 0;
+    this->dash_target.y    = 0;
+    this->dash_accel.x     = 0;
+    this->dash_accel.y     = 0;
+    this->hitbox.x         = 1;
+    this->hitbox.y         = 3;
+    this->hitbox.w         = 6;
+    this->hitbox.h         = 5;
     this->spr_off          = 0;
     this->was_on_ground    = false;
     create_hair(this);
@@ -1092,12 +1091,10 @@ void create_hair(OBJ* obj)
     /*obj->hair = {};*/
     for (i=0;i<=4;i++)
     {
-        obj->hair[i] = (HAIR) {
-            .x=obj->x,
-            .y=obj->y,
-            .size=P8max(1,P8min(2,3-i)),
-            .isLast = i == 4
-        };
+        obj->hair[i].x      = obj->x;
+        obj->hair[i].y      = obj->y;
+        obj->hair[i].size   = P8max(1, P8min(2, 3 - i));
+        obj->hair[i].isLast = i == 4;
     }
 }
 
@@ -1266,10 +1263,13 @@ static void break_spring(OBJ* obj)
 //balloon
 static void BALLOON_init(OBJ* this)
 {
-    this->offset = P8rnd(1);
-    this->start  = this->y;
-    this->timer  = 0;
-    this->hitbox = (HITBOX){.x=-1,.y=-1,.w=10,.h=10};
+    this->offset   = P8rnd(1);
+    this->start    = this->y;
+    this->timer    = 0;
+    this->hitbox.x = -1;
+    this->hitbox.y = -1;
+    this->hitbox.w = 10;
+    this->hitbox.h = 10;
 }
 
 static void BALLOON_update(OBJ* this)
@@ -1549,7 +1549,10 @@ static void LIFEUP_draw(OBJ* this)
 static void FAKE_WALL_update(OBJ* this)
 {
     OBJ* hit;
-    this->hitbox=(HITBOX){.x=-1,.y=-1,.w=18,.h=18};
+    this->hitbox.x = -1;
+    this->hitbox.y = -1;
+    this->hitbox.w = 18;
+    this->hitbox.h = 18;
     hit = OBJ_collide(this, OBJ_PLAYER,0,0);
     if (hit!=NULL && hit->dash_effect_time>0)
     {
@@ -1567,12 +1570,10 @@ static void FAKE_WALL_update(OBJ* this)
         destroy_object(this); //LEMON: moved here. see PLAYER_update. also returning to avoid modifying removed object
         return;
     }
-    this->hitbox=(HITBOX) {
-        .x=0,
-        .y=0,
-        .w=16,
-        .h=16
-    };
+    this->hitbox.x = 0;
+    this->hitbox.y = 0;
+    this->hitbox.w = 16;
+    this->hitbox.h = 16;
 }
 
 static void FAKE_WALL_draw(OBJ* this)
@@ -1749,12 +1750,10 @@ static void BIG_CHEST_draw(OBJ* this)
         flash_bg=true;
         if (this->timer<=45 && this->particle_count<50)
         {
-            this->particles[this->particle_count++] = (PARTICLE){
-                .x=1+P8rnd(14),
-                .y=0,
-                .spd=8+P8rnd(8),
-                .h=32+P8rnd(32)
-            };
+            this->particles[this->particle_count++].x   = 1+P8rnd(14);
+            this->particles[this->particle_count++].y   = 0;
+            this->particles[this->particle_count++].spd = 8+P8rnd(8);
+            this->particles[this->particle_count++].h   = 32+P8rnd(32);
         }
         if (this->timer<0)
         {
@@ -1843,13 +1842,13 @@ static void FLAG_draw(OBJ* this)
         P8spr(26,55,6, 1,1,false,false);
         {
             char str[16];
-            SDL_snprintf(str, sizeof(str), "x%i", this->score);
+            snprintf(str, sizeof(str), "x%i", this->score);
             P8print(str,64,9,7);
         }
         draw_time(49,16);
         {
             char str[16];
-            SDL_snprintf(str, sizeof(str), "deaths:%i", deaths);
+            snprintf(str, sizeof(str), "deaths:%i", deaths);
             P8print(str,48,24,7);
         }
     }
@@ -1892,7 +1891,7 @@ static void ROOM_TITLE_draw(OBJ* this)
             int level=(1+level_index())*100;
             {
                 char str[16];
-                SDL_snprintf(str, sizeof(str), "%i m", level);
+                snprintf(str, sizeof(str), "%i m", level);
                 P8print(str,52+(level<1000 ? 2 : 0),62,7);
             }
         }
@@ -1939,12 +1938,17 @@ static OBJ* init_object(OBJTYPE type, float x, float y)
     obj->spr    = OBJTYPE_prop[type].tile;
     obj->flip_x = obj->flip_y = false;
 
-    obj->x      = x;
-    obj->y      = y;
-    obj->hitbox = (HITBOX){ .x=0,.y=0,.w=8,.h=8 };
+    obj->x        = x;
+    obj->y        = y;
+    obj->hitbox.x = 0;
+    obj->hitbox.y = 0;
+    obj->hitbox.w = 8;
+    obj->hitbox.h = 8;
 
-    obj->spd = (VEC){.x=0,.y=0};
-    obj->rem = (VEC){.x=0,.y=0};
+    obj->spd.x = 0;
+    obj->spd.y = 0;
+    obj->rem.x = 0;
+    obj->rem.y = 0;
 
     //add(objects,obj)
     if (OBJ_PROP(obj).init!=NULL)
@@ -1977,18 +1981,12 @@ static void kill_player(OBJ* obj)
     for (dir=0; dir <= 7; dir+=1)
     {
         float angle=(dir/8);
-        dead_particles[dead_particles_count++] = (PARTICLE)
-            {
-            .active = true,
-            .x      = obj->x+4,
-            .y      = obj->y+4,
-            .t      = 10,
-            .spd2   = (VEC)
-            {
-                .x = P8sin(angle)*3,
-                .y = P8cos(angle)*3
-            }
-        };
+        dead_particles[dead_particles_count++].active = true;
+        dead_particles[dead_particles_count++].x      = obj->x+4;
+        dead_particles[dead_particles_count++].y      = obj->y+4;
+        dead_particles[dead_particles_count++].t      = 10;
+        dead_particles[dead_particles_count++].spd2.x = P8sin(angle)*3;
+        dead_particles[dead_particles_count++].spd2.y = P8cos(angle)*3;
         restart_room();
     }
     destroy_object(obj); //LEMON: moved here to avoid using ->x and ->y from dead object
@@ -2419,7 +2417,7 @@ static void draw_time(float x, float y)
     P8rectfill(x,y,x+32,y+6,0);
     {
         char str[27];
-        SDL_snprintf(str, sizeof(str), "%.2i:%.2i:%.2i", h, m, s);
+        snprintf(str, sizeof(str), "%.2i:%.2i:%.2i", h, m, s);
         P8print(str,x+1,y+1,7);
     }
 }
