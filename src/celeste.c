@@ -14,13 +14,10 @@
 
 #include "celeste.h"
 
-#define NGAGE_DEBUG
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
-
 #include "SDL.h"
 #define snprintf SDL_snprintf
 #endif
-
 
 #if defined CELESTE_P8_FIXEDP
 
