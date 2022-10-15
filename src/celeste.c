@@ -6,11 +6,6 @@
  * so _init becomes Celeste_P8_init && music becomes P8music, etc
  */
 
-#if defined (__NGAGE__)
-#include "SDL.h"
-#define snprintf SDL_snprintf
-#endif
-
 #include <math.h>
 #include <string.h>
 #include <stdlib.h>
@@ -19,7 +14,14 @@
 
 #include "celeste.h"
 
-#ifdef CELESTE_P8_FIXEDP
+#define NGAGE_DEBUG
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG)
+
+#include "SDL.h"
+#define snprintf SDL_snprintf
+#define float float
+
+#elif defined CELESTE_P8_FIXEDP
 
 //very ugly hack:
 //in order to switch to fixed point type and arithmetic, without having
@@ -128,7 +130,6 @@ static _fix32 _fix32_abs(_fix32 x) {
 #define float float
 
 #endif //CELESTE_P8_FIXEDP
-
 
 #ifdef __cplusplus
 #define this xthis //this is a keyword in C++

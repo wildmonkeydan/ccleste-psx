@@ -31,7 +31,7 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
 #endif
     if (!sdl2_window)
     {
-#if (__NGAGE__)
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG)
         sdl2_window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, 0);
 #else
         sdl2_window = SDL_CreateWindow("", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_RESIZABLE);
@@ -40,7 +40,7 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
         {
             goto die;
         }
-#if (__NGAGE__)
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG)
         sdl2_rendr = SDL_CreateRenderer(sdl2_window, -1, SDL_RENDERER_SOFTWARE);
 #else
         sdl2_rendr = SDL_CreateRenderer(sdl2_window, -1, 0);
@@ -108,7 +108,10 @@ static void SDL_Flip(SDL_Surface* screen)
 {
 #if defined (__NGAGE__)
     SDL_Rect source = { 0, 0, 128, 128 };
-    SDL_Rect dest   = { 24, 40, 123, 128 };
+    SDL_Rect dest   = { 24, 40, 128, 128 };
+#elif defined (NGAGE_DEBUG)
+    SDL_Rect source = { 0, 0, 384, 384 };
+    SDL_Rect dest   = { 72, 120, 384, 384 };
 #endif
 
     assert(screen == sdl2_screen);
@@ -116,7 +119,7 @@ static void SDL_Flip(SDL_Surface* screen)
     SDL_UpdateTexture(sdl2_screen_tex, NULL, screen->pixels, screen->pitch);
     SDL_SetRenderDrawColor(sdl2_rendr, 0, 0, 0, 255);
     SDL_RenderClear(sdl2_rendr);
-#if defined (__NGAGE__)
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG)
     SDL_RenderCopy(sdl2_rendr, sdl2_screen_tex, &source, &dest);
 #else
     SDL_RenderCopy(sdl2_rendr, sdl2_screen_tex, NULL, NULL);

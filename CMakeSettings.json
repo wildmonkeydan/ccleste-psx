@@ -22,6 +22,11 @@
                     "type": "FILEPATH"
                 },
                 {
+                    "name": "NGAGE_DEBUG",
+                    "value": "True",
+                    "type": "BOOL"
+                },
+                {
                     "name": "CELESTE_P8_FIXEDP",
                     "value": "False",
                     "type": "BOOL"
@@ -53,6 +58,11 @@
                     "name": "SDL2_LIBRARY",
                     "value": "${projectDir}\\deps\\SDL2-2.24.0_x64\\lib\\x64\\SDL2.lib",
                     "type": "FILEPATH"
+                },
+                {
+                    "name": "NGAGE_DEBUG",
+                    "value": "False",
+                    "type": "BOOL"
                 },
                 {
                     "name": "CELESTE_P8_FIXEDP",

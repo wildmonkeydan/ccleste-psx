@@ -44,6 +44,8 @@ Mix_Music*   mus[6]  = {NULL};
 
 #if defined (__NGAGE__)
 static int scale = 1;
+#elif defined (NGAGE_DEBUG)
+static int scale = 3;
 #else
 static int scale = 4;
 #endif
@@ -307,12 +309,12 @@ int main(int argc, char** argv)
     initflag |= SDL_INIT_AUDIO;
 #endif
     SDL_CHECK(SDL_Init(initflag) == 0);
-#if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__)
+#if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__) && ! defined (NGAGE_DEBUG)
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
     SDL_GameControllerAddMappingsFromRW(SDL_RWFromFile("gamecontrollerdb.txt", "rb"), 1);
 #endif
-#if defined (__NGAGE__)
-    SDL_CHECK(screen = SDL_SetVideoMode(176, 208, 32, videoflag));
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG)
+    SDL_CHECK(screen = SDL_SetVideoMode(176 * scale, 208 * scale, 32, videoflag));
 #else
     SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
 #endif
@@ -507,7 +509,7 @@ static void mainLoop(void)
     prev_buttons_state = buttons_state;
     buttons_state = 0;
 
-#if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__)
+#if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__) && ! defined (NGAGE_DEBUG)
     SDL_GameControllerUpdate();
     ReadGamepadInput(&buttons_state);
 
