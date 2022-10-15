@@ -8,6 +8,7 @@
 
 #if defined (__NGAGE__)
 #include "SDL.h"
+#define snprintf SDL_snprintf
 #endif
 
 #include <math.h>
