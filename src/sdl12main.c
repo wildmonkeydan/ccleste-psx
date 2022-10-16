@@ -5,6 +5,8 @@
 #endif
 #if SDL_MAJOR_VERSION >= 2
 #include "sdl20compat.inc.c"
+#else
+#define SDL_Log printf
 #endif
 #include <math.h>
 #include <stdarg.h>
