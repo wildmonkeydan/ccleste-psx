@@ -46,7 +46,7 @@
       "variables": [
         {
           "name": "NGAGE_DEBUG",
-          "value": "True",
+          "value": "False",
           "type": "BOOL"
         },
         {
