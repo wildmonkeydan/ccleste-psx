@@ -248,7 +248,7 @@ static void pico8_srand(unsigned seed) //also decomp'd
 
 #ifndef CELESTE_P8_FIXEDP
 
-#if SDL_VERSION_ATLEAST(2, 0, 0) && (defined (__NGAGE__) || defined (NGAGE_DEBUG))
+#if SDL_MAJOR_VERSION >= 2 && (defined (__NGAGE__) || defined (NGAGE_DEBUG))
 inline double P8max(double left, double right) { return (left > right) ? left : right; }
 inline double P8min(double left, double right) { return (left < right) ? left : right; }
 #define P8abs SDL_fabsf
