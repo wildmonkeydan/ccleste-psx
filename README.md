@@ -22,9 +22,6 @@ This fork aims to be more robust and portable than the original and
 should, at least in theory, be compilable from all platforms officially
 supported by SDL 2.
 
-Note: To speed up development, sound support has been temporarily
-disabled.
-
 ## Compiling
 
 ### Windows
