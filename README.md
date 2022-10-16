@@ -79,6 +79,7 @@ make
 |SHIFT+S           |1                  | Save state         |
 |Hold F9           |Hold C             | Reset              |
 |F11               |                   | Fullscreen         |
+|Delete            |Softkey (left)     | Quit               |
 
 ## Credits
 
