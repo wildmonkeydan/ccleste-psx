@@ -28,6 +28,7 @@ macro(get_sdl2 version)
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
         GIT_TAG "${tag}")
       FetchContent_MakeAvailable(SDL2)
+      set(SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2)
     endif()
   endif()
 
