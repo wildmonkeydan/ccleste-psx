@@ -73,18 +73,30 @@ static const SDL_Color base_palette[16] =
 };
 
 static SDL_Color palette[16];
+static Uint32 map[16];
 
-static inline Uint32 getcolor(char idx)
+#define getcolor(col) map[col % 16]
+
+static void SetPaletteEntry(char idx, char base_idx)
 {
-    SDL_Color c = palette[idx%16];
-    return SDL_MapRGB(screen->format, c.r,c.g,c.b);
+    palette[idx] = base_palette[base_idx];
+    map[idx] = SDL_MapRGB(screen->format, palette[idx].r, palette[idx].g, palette[idx].b);
+}
+
+static void RefreshPalette(void)
+{
+    int i;
+
+    for (i = 0; i < SDL_arraysize(map); i++)
+    {
+        map[i] = SDL_MapRGB(screen->format, palette[i].r, palette[i].g, palette[i].b);
+    }
 }
 
 static void ResetPalette(void)
 {
-    //SDL_SetPalette(surf, SDL_PHYSPAL|SDL_LOGPAL, (SDL_Color*)base_palette, 0, 16);
-    //memcpy(screen->format->palette->colors, base_palette, 16*sizeof(SDL_Color));
     SDL_memcpy(palette, base_palette, sizeof palette);
+    RefreshPalette();
 }
 
 static char* GetDataPath(char* path, int n, const char* fname)
@@ -303,7 +315,7 @@ static FILE*      TAS                = NULL;
 int main(int argc, char** argv)
 {
     int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
-    int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
+    int videoflag = SDL_SWSURFACE | SDL_ANYFORMAT;
     int initflag  = SDL_INIT_VIDEO;
 #if CELESTE_P8_ENABLE_AUDIO
     int mixflag = MIX_INIT_OGG;
@@ -582,6 +594,7 @@ static void mainLoop(void)
                         OSDset("toggle fullscreen");
                     }
                     screen = SDL_GetVideoSurface();
+                    RefreshPalette();
                     break;
                 }
                 else if (0 && ev.key.keysym.sym == SDLK_5)
@@ -743,7 +756,8 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
     int      srcx, srcy, w, h;
 
     assert(src && dst && !src->locked && !dst->locked);
-    assert(dst->format->BitsPerPixel == 32 && src->format->BitsPerPixel == 8);
+    assert(src->format->BitsPerPixel == 8);
+    assert(dst->format->BytesPerPixel == 2 || dst->format->BytesPerPixel == 4);
     /* If the destination rectangle is NULL, use the entire dest surface */
     if (!dstrect)
     {
@@ -827,9 +841,9 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
     {
         unsigned char* srcpix   = src->pixels;
         int            srcpitch = src->pitch;
-        Uint32*        dstpix   = dst->pixels;
         int            x, y;
-#define _blitter(dp, xflip) do \
+#define _blitter(dsttype, dp, xflip) do { \
+            dsttype* dstpix = dst->pixels; \
             for (y = 0; y < h; y++) \
             { \
                 for (x = 0; x < w; x++) \
@@ -838,22 +852,38 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
                     if (p) dstpix[dstrect->x+x + (dstrect->y+y)*dst->w] = getcolor(dp); \
                 } \
             } \
-            while(0)
-        if (color && flipx)
+            } while(0)
+        if (screen->format->BytesPerPixel == 2 && color && flipx)
         {
-            _blitter(color, 1);
+            _blitter(Uint16, color, 1);
         }
-        else if (!color && flipx)
+        else if (screen->format->BytesPerPixel == 2 && !color && flipx)
         {
-            _blitter(p, 1);
+            _blitter(Uint16, p, 1);
         }
-        else if (color && !flipx)
+        else if (screen->format->BytesPerPixel == 2 && color && !flipx)
         {
-            _blitter(color, 0);
+            _blitter(Uint16, color, 0);
         }
-        else if (!color && !flipx)
+        else if (screen->format->BytesPerPixel == 2 && !color && !flipx)
         {
-            _blitter(p, 0);
+            _blitter(Uint16, p, 0);
+        }
+        else if (screen->format->BytesPerPixel == 4 && color && flipx)
+        {
+            _blitter(Uint32, color, 1);
+        }
+        else if (screen->format->BytesPerPixel == 4 && !color && flipx)
+        {
+            _blitter(Uint32, p, 1);
+        }
+        else if (screen->format->BytesPerPixel == 4 && color && !flipx)
+        {
+            _blitter(Uint32, color, 0);
+        }
+        else if (screen->format->BytesPerPixel == 4 && !color && !flipx)
+        {
+            _blitter(Uint32, p, 0);
         }
 #undef _blitter
     }
@@ -994,7 +1024,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
             if (a >= 0 && a < 16 && b >= 0 && b < 16)
             {
                 //swap palette colors
-                palette[a] = base_palette[b];
+                SetPaletteEntry(a, b);
             }
             break;
         }

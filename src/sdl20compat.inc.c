@@ -7,6 +7,7 @@ enum
     SDL_LOGPAL      = 2,
     SDL_SRCCOLORKEY = 4,
     SDL_HWPALETTE   = 8,
+    SDL_ANYFORMAT   = 16,
 };
 
 static SDL_Surface*  sdl2_screen     = NULL;
@@ -20,7 +21,7 @@ static SDL_Texture* ngage_frame = NULL;
 
 static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flags)
 {
-    Uint32 format = SDL_PIXELFORMAT_RGBA32;
+    Uint32 format = SDL_PIXELFORMAT_UNKNOWN;
     SDL_RendererInfo info = { 0 };
     unsigned int i;
 
@@ -47,11 +48,19 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
         }
 
         for (i = 0; i < info.num_texture_formats; i++) {
-            if (SDL_BYTESPERPIXEL(info.texture_formats[i]) == 4) {
+            int found_bpp = SDL_BYTESPERPIXEL(info.texture_formats[i]);
+            if (found_bpp * 8 == bpp) {
                 format = info.texture_formats[i];
                 break;
+            } else if ((flags & SDL_ANYFORMAT) && format == SDL_PIXELFORMAT_UNKNOWN) {
+                if (found_bpp == 2 || found_bpp == 4) {
+                    format = info.texture_formats[i];
+                }
             }
         }
+        if (format == SDL_PIXELFORMAT_UNKNOWN)
+            format = SDL_PIXELFORMAT_RGBA32;
+
         sdl2_screen_tex = SDL_CreateTexture(sdl2_rendr, format, SDL_TEXTUREACCESS_STREAMING, width, height);
 
         if (0)
