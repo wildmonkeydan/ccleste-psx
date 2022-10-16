@@ -3,7 +3,8 @@
 [![CMake](https://github.com/mupfdev/ccleste/actions/workflows/cmake.yml/badge.svg)](https://github.com/mupfdev/ccleste/actions/workflows/cmake.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/9ef529e6a22d409089bc35f1566fa269)](https://www.codacy.com/gh/mupfdev/ccleste/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mupfdev/ccleste&amp;utm_campaign=Badge_Grade)
 
-[![Celeste](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-tn.png)](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot.png?raw=true "Celeste")
+[![Celeste 1](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-01-tn.png)](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-01.png?raw=true "Celeste 1")
+[![Celeste 2](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-02-tn.png)](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-02.png?raw=true "Celeste 2")
 
 This C source port of the [original
 Celeste](https://www.lexaloffle.com/bbs/?tid=2145) for the PICO-8 was
@@ -12,11 +13,11 @@ originally developed by
 
 In the original version, attention was paid to portability, but there
 was still some need for improvement.  Especially since I really wanted
-to get the game to run on the Nokia N-Gage and was stuck with a very old
-compiler.
+to get the game to run on the **Nokia N-Gage** and was stuck with a very
+old compiler.
 
 In addition, the SDL 1.2 integration seemed obsolete to me, since SDL 2
-now natively supports the Nintendo 3DS.
+now natively supports the **Nintendo 3DS**.
 
 This fork aims to be more robust and portable than the original and
 should, at least in theory, be compilable from all platforms officially
