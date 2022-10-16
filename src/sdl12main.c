@@ -303,7 +303,7 @@ static FILE*      TAS                = NULL;
 int main(int argc, char** argv)
 {
     int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
-    int videoflag = SDL_SWSURFACE | SDL_HWPALETTE;
+    int videoflag = SDL_SWSURFACE | SDL_ANYFORMAT;
     int initflag  = SDL_INIT_VIDEO;
 #if CELESTE_P8_ENABLE_AUDIO
     int mixflag = MIX_INIT_OGG;
@@ -743,7 +743,8 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
     int      srcx, srcy, w, h;
 
     assert(src && dst && !src->locked && !dst->locked);
-    assert(dst->format->BitsPerPixel == 32 && src->format->BitsPerPixel == 8);
+    assert(src->format->BitsPerPixel == 8);
+    assert(dst->format->BytesPerPixel == 2 || dst->format->BytesPerPixel == 4);
     /* If the destination rectangle is NULL, use the entire dest surface */
     if (!dstrect)
     {
@@ -827,9 +828,9 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
     {
         unsigned char* srcpix   = src->pixels;
         int            srcpitch = src->pitch;
-        Uint32*        dstpix   = dst->pixels;
         int            x, y;
-#define _blitter(dp, xflip) do \
+#define _blitter(dsttype, dp, xflip) do { \
+            dsttype* dstpix = dst->pixels; \
             for (y = 0; y < h; y++) \
             { \
                 for (x = 0; x < w; x++) \
@@ -838,22 +839,38 @@ static inline void Xblit(SDL_Surface* src, SDL_Rect* srcrect, SDL_Surface* dst, 
                     if (p) dstpix[dstrect->x+x + (dstrect->y+y)*dst->w] = getcolor(dp); \
                 } \
             } \
-            while(0)
-        if (color && flipx)
+            } while(0)
+        if (screen->format->BytesPerPixel == 2 && color && flipx)
         {
-            _blitter(color, 1);
+            _blitter(Uint16, color, 1);
         }
-        else if (!color && flipx)
+        else if (screen->format->BytesPerPixel == 2 && !color && flipx)
         {
-            _blitter(p, 1);
+            _blitter(Uint16, p, 1);
         }
-        else if (color && !flipx)
+        else if (screen->format->BytesPerPixel == 2 && color && !flipx)
         {
-            _blitter(color, 0);
+            _blitter(Uint16, color, 0);
         }
-        else if (!color && !flipx)
+        else if (screen->format->BytesPerPixel == 2 && !color && !flipx)
         {
-            _blitter(p, 0);
+            _blitter(Uint16, p, 0);
+        }
+        else if (screen->format->BytesPerPixel == 4 && color && flipx)
+        {
+            _blitter(Uint32, color, 1);
+        }
+        else if (screen->format->BytesPerPixel == 4 && !color && flipx)
+        {
+            _blitter(Uint32, p, 1);
+        }
+        else if (screen->format->BytesPerPixel == 4 && color && !flipx)
+        {
+            _blitter(Uint32, color, 0);
+        }
+        else if (screen->format->BytesPerPixel == 4 && !color && !flipx)
+        {
+            _blitter(Uint32, p, 0);
         }
 #undef _blitter
     }
