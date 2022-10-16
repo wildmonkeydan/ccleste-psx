@@ -12,16 +12,6 @@
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "variables": [
         {
-          "name": "SDL2_INCLUDE_DIR",
-          "value": "${projectDir}\\deps\\SDL2-2.24.0_x64\\include",
-          "type": "PATH"
-        },
-        {
-          "name": "SDL2_LIBRARY",
-          "value": "${projectDir}\\deps\\SDL2-2.24.0_x64\\lib\\x64\\SDL2.lib",
-          "type": "FILEPATH"
-        },
-        {
           "name": "NGAGE_DEBUG",
           "value": "True",
           "type": "BOOL"
@@ -34,6 +24,11 @@
         {
           "name": "CELESTE_P8_HACKED_BALLOONS",
           "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "CELESTE_P8_ENABLE_AUDIO",
+          "value": "True",
           "type": "BOOL"
         }
       ]
@@ -50,18 +45,8 @@
       "inheritEnvironments": [ "msvc_x64_x64" ],
       "variables": [
         {
-          "name": "SDL2_INCLUDE_DIR",
-          "value": "${projectDir}\\deps\\SDL2-2.24.0_x64\\include",
-          "type": "PATH"
-        },
-        {
-          "name": "SDL2_LIBRARY",
-          "value": "${projectDir}\\deps\\SDL2-2.24.0_x64\\lib\\x64\\SDL2.lib",
-          "type": "FILEPATH"
-        },
-        {
           "name": "NGAGE_DEBUG",
-          "value": "False",
+          "value": "True",
           "type": "BOOL"
         },
         {
@@ -72,6 +57,11 @@
         {
           "name": "CELESTE_P8_HACKED_BALLOONS",
           "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "CELESTE_P8_ENABLE_AUDIO",
+          "value": "True",
           "type": "BOOL"
         }
       ]
@@ -104,6 +94,11 @@
         },
         {
           "name": "CELESTE_P8_HACKED_BALLOONS",
+          "value": "False",
+          "type": "BOOL"
+        },
+        {
+          "name": "CELESTE_P8_ENABLE_AUDIO",
           "value": "False",
           "type": "BOOL"
         }
