@@ -20,19 +20,10 @@ static SDL_Texture* ngage_frame = NULL;
 
 static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flags)
 {
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-    int
-        rmask = 0xff000000,
-        gmask = 0x00ff0000,
-        bmask = 0x0000ff00,
-        amask = 0x000000ff;
-#else
-    int
-        rmask = 0x000000ff,
-        gmask = 0x0000ff00,
-        bmask = 0x00ff0000,
-        amask = 0xff000000;
-#endif
+    Uint32 format = SDL_PIXELFORMAT_RGBA32;
+    SDL_RendererInfo info;
+    int i;
+
     if (!sdl2_window)
     {
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
@@ -54,7 +45,14 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
         {
             goto die;
         }
-        sdl2_screen_tex = SDL_CreateTexture(sdl2_rendr, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, width, height);
+
+        for (i = 0; i < info.num_texture_formats; i++) {
+            if (SDL_BYTESPERPIXEL(info.texture_formats[i]) == 4) {
+                format = info.texture_formats[i];
+                break;
+            }
+        }
+        sdl2_screen_tex = SDL_CreateTexture(sdl2_rendr, format, SDL_TEXTUREACCESS_STREAMING, width, height);
 
         if (0)
         {
@@ -80,7 +78,7 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
             return NULL;
         }
     }
-    sdl2_screen = SDL_CreateRGBSurface(0, width, height, 32, rmask, gmask, bmask, amask);
+    sdl2_screen = SDL_CreateRGBSurfaceWithFormat(0, width, height, SDL_BITSPERPIXEL(format), format);
     assert(sdl2_screen && sdl2_screen->format->BitsPerPixel == bpp);
 
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
