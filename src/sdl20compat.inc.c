@@ -21,8 +21,8 @@ static SDL_Texture* ngage_frame = NULL;
 static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flags)
 {
     Uint32 format = SDL_PIXELFORMAT_RGBA32;
-    SDL_RendererInfo info;
-    int i;
+    SDL_RendererInfo info = { 0 };
+    unsigned int i;
 
     if (!sdl2_window)
     {
@@ -85,8 +85,10 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
     {
 #if defined (__NGAGE__)
         SDL_Surface* frame_sf = SDL_LoadBMP("E:\\System\\Apps\\Celeste\\data\\frame.bmp");
+#elif defined (_WIN32)
+        SDL_Surface* frame_sf = SDL_LoadBMP("data\\frame.bmp");
 #else
-        SDL_Surface* frame_sf = SDL_LoadBMP("frame.bmp");
+        SDL_Surface* frame_sf = SDL_LoadBMP("data/frame.bmp");
 #endif
 
         if (! frame_sf)
