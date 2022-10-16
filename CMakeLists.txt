@@ -58,6 +58,10 @@ endif()
 
 target_link_libraries(${PROJECT_TITLE} PRIVATE ${SDL2_LIBRARIES})
 
+if(CMAKE_C_COMPILER_ID STREQUAL "GNU" AND UNIX)
+  target_link_libraries(${PROJECT_TITLE} PRIVATE m)
+endif()
+
 if(NINTENDO_3DS)
   set(ROMFS_DIR "${CMAKE_CURRENT_BINARY_DIR}/romfs")
   file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/data DESTINATION ${ROMFS_DIR})
