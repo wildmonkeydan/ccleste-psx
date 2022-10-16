@@ -73,18 +73,30 @@ static const SDL_Color base_palette[16] =
 };
 
 static SDL_Color palette[16];
+static Uint32 map[16];
 
-static inline Uint32 getcolor(char idx)
+#define getcolor(col) map[col % 16]
+
+static void SetPaletteEntry(char idx, char base_idx)
 {
-    SDL_Color c = palette[idx%16];
-    return SDL_MapRGB(screen->format, c.r,c.g,c.b);
+    palette[idx] = base_palette[base_idx];
+    map[idx] = SDL_MapRGB(screen->format, palette[idx].r, palette[idx].g, palette[idx].b);
+}
+
+static void RefreshPalette(void)
+{
+    int i;
+
+    for (i = 0; i < SDL_arraysize(map); i++)
+    {
+        map[i] = SDL_MapRGB(screen->format, palette[i].r, palette[i].g, palette[i].b);
+    }
 }
 
 static void ResetPalette(void)
 {
-    //SDL_SetPalette(surf, SDL_PHYSPAL|SDL_LOGPAL, (SDL_Color*)base_palette, 0, 16);
-    //memcpy(screen->format->palette->colors, base_palette, 16*sizeof(SDL_Color));
     SDL_memcpy(palette, base_palette, sizeof palette);
+    RefreshPalette();
 }
 
 static char* GetDataPath(char* path, int n, const char* fname)
@@ -582,6 +594,7 @@ static void mainLoop(void)
                         OSDset("toggle fullscreen");
                     }
                     screen = SDL_GetVideoSurface();
+                    RefreshPalette();
                     break;
                 }
                 else if (0 && ev.key.keysym.sym == SDLK_5)
@@ -1011,7 +1024,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
             if (a >= 0 && a < 16 && b >= 0 && b < 16)
             {
                 //swap palette colors
-                palette[a] = base_palette[b];
+                SetPaletteEntry(a, b);
             }
             break;
         }
