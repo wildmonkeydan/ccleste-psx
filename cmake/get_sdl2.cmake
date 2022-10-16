@@ -42,7 +42,9 @@ endmacro(get_sdl2)
 
 macro(get_sdl2_mixer version)
   include(FetchContent)
-  cmake_policy(SET CMP0135 NEW)
+  if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
+    cmake_policy(SET CMP0135 NEW)
+  endif()
   if(MSVC OR (WIN32 AND CMAKE_C_COMPILER_ID MATCHES "Clang"))
     FetchContent_Declare(
       SDL2_mixer
