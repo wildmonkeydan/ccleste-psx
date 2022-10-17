@@ -25,14 +25,12 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { name: "Windows (x64)", os: windows-latest, cmake_flags: "-A x64"}
-          - { name: "Windows (x86)", os: windows-latest, cmake_flags: "-A x86"}
-          - { name: "Windows (Clang-cl x64)", os: windows-latest, cmake_flags: "-T ClangCL -A x64"}
-          - { name: "Windows (Clang-cl x86)", os: windows-latest, cmake_flags: "-T ClangCL -A x86"}
-          - { name: "macOS (Universal)", os: macos-latest, cmake_flags: "-GNinja -DCMAKE_OSX_ARCHITECTURES=\"x86_64;arm64\"", use_binary_deps: false}
-          - { name: "macOS (Brew)", os: macos-latest, cmake_flags: "-GNinja", use_binary_deps: true}
-          - { name: "Ubuntu (Source)", os: ubuntu-latest, cmake_flags: "-GNinja", use_binary_deps: false}
-          - { name: "Ubuntu (Apt)", os: ubuntu-latest, cmake_flags: "-GNinja", use_binary_deps: true}
+          - { name: "Windows (MSVC)",     os: windows-latest, cmake_flags: "-A x64"}
+          - { name: "Windows (Clang-cl)", os: windows-latest, cmake_flags: "-T ClangCL -A x64"}
+          - { name: "macOS (Source)",     os: macos-latest,   cmake_flags: "-GNinja", use_binary_deps: false}
+          - { name: "macOS (Brew)",       os: macos-latest,   cmake_flags: "-GNinja", use_binary_deps: true}
+          - { name: "Ubuntu (Source)",    os: ubuntu-latest,  cmake_flags: "-GNinja", use_binary_deps: false}
+          - { name: "Ubuntu (Apt)",       os: ubuntu-latest,  cmake_flags: "-GNinja", use_binary_deps: true}
           # TODO: Restore NGage support
 
     steps:
@@ -68,12 +66,11 @@ jobs:
 
       - name: Configure project
         run: |
-          cmake -S ${{github.workspace}} \
-                -B ${{github.workspace}}/build \
-                -G Ninja \
+          cmake -S . \
+                -B build \
                 -D CMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
                 -D CELESTE_P8_ENABLE_AUDIO=ON \
                 ${{ matrix.platform.cmake_flags }}
 
       - name: Build project
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: cmake --build build --config ${{env.BUILD_TYPE}}
