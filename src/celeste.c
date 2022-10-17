@@ -2369,7 +2369,7 @@ void Celeste_P8_draw()
 #else
         P8print("x+c",58,80,5);
 #endif
-        P8print("matt thorson",42,96,5);
+        P8print("maddy thorson",41,96,5);
         P8print("noel berry",46,102,5);
     }
 
