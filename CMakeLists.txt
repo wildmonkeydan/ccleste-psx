@@ -44,7 +44,7 @@ if (CMAKE_BUILD_TYPE MATCHES Release)
   endif()
 endif()
 
-add_executable(${PROJECT_TITLE} ${project_sources})
+add_executable(${PROJECT_TITLE} ${GUI_TYPE} ${project_sources})
 
 set_target_properties(${PROJECT_TITLE} PROPERTIES C_STANDARD 90 CXX_STANDARD 11)
 
