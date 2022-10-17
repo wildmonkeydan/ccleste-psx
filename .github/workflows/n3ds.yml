@@ -1,0 +1,61 @@
+name: Nintendo 3DS Build
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  n3ds:
+    name: Build (Nintendo 3DS)
+    runs-on: ubuntu-latest
+    container: devkitpro/devkitarm:latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Checkout SDL2
+        uses: actions/checkout@v3
+        with:
+          repository: libsdl-org/SDL
+          path: .github/SDL
+      - name: Install SDL2
+        run: |
+          cmake -S .github/SDL -B .github/SDL-build -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/3DS.cmake \
+                -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+          cmake --build .github/SDL-build --config ${{ env.BUILD_TYPE }}
+          cmake --install .github/SDL-build --config ${{ env.BUILD_TYPE }}
+
+      - name: Checkout SDL2_mixer
+        uses: actions/checkout@v3
+        with:
+          repository: libsdl-org/SDL_mixer
+          path: .github/SDL_mixer
+          ref: release-2.6.2
+          submodules: true
+      - name: Install SDL2_mixer
+        run: |
+          cmake -S .github/SDL_mixer -B .github/SDL_mixer-build -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/3DS.cmake \
+                -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DSDL2MIXER_DEPS_SHARED=OFF \
+                -DSDL2MIXER_SAMPLES=OFF -DSDL2MIXER_FLAC=OFF -DSDL2MIXER_MIDI=OFF -DSDL2MIXER_MOD=OFF \
+                -DSDL2MIXER_MP3=OFF -DSDL2MIXER_OPUS=OFF
+          cmake --build .github/SDL_mixer-build --config ${{ env.BUILD_TYPE }}
+          cmake --install .github/SDL_mixer-build --config ${{ env.BUILD_TYPE }}
+
+      - name: Configure project
+        run: |
+          cmake -S . \
+                -B build \
+                -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/3DS.cmake \
+                -D CMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+                -D CELESTE_P8_ENABLE_AUDIO=ON
+
+      - name: Build project
+        run: cmake --build build --config ${{ env.BUILD_TYPE }}
+
+      - name: Upload application
+        uses: actions/upload-artifact@v3
+        with:
+          name: 3DS_build
+          path: build/ccleste.3dsx
+          if-no-files-found: error
