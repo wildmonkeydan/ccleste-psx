@@ -15,6 +15,7 @@ env:
 
 jobs:
   build:
+    name: "Build (${{ matrix.platform.name }})"
     runs-on: ${{ matrix.platform.os }}
 
     defaults:
@@ -25,12 +26,12 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - { name: "Windows (MSVC)",     os: windows-latest, cmake_flags: "-A x64"}
-          - { name: "Windows (Clang-cl)", os: windows-latest, cmake_flags: "-T ClangCL -A x64"}
-          - { name: "macOS (Source)",     os: macos-latest,   cmake_flags: "-GNinja", use_binary_deps: false}
-          - { name: "macOS (Brew)",       os: macos-latest,   cmake_flags: "-GNinja", use_binary_deps: true}
-          - { name: "Ubuntu (Source)",    os: ubuntu-latest,  cmake_flags: "-GNinja", use_binary_deps: false}
-          - { name: "Ubuntu (Apt)",       os: ubuntu-latest,  cmake_flags: "-GNinja", use_binary_deps: true}
+          - { name: "Windows, MSVC",     os: windows-latest, cmake_flags: "-A x64"}
+          - { name: "Windows, Clang-cl", os: windows-latest, cmake_flags: "-T ClangCL -A x64"}
+          - { name: "macOS, Source",     os: macos-latest,   cmake_flags: "-GNinja", use_binary_deps: false}
+          - { name: "macOS, Brew",       os: macos-latest,   cmake_flags: "-GNinja", use_binary_deps: true}
+          - { name: "Ubuntu, Source",    os: ubuntu-latest,  cmake_flags: "-GNinja", use_binary_deps: false}
+          - { name: "Ubuntu, Apt",       os: ubuntu-latest,  cmake_flags: "-GNinja", use_binary_deps: true}
           # TODO: Restore NGage support
 
     steps:
