@@ -33,12 +33,23 @@ if(NOT BUILD_FOR_NOKIA_NGAGE AND CELESTE_P8_ENABLE_AUDIO)
   get_sdl2_mixer("2.6.2")
 endif()
 
+set(GUI_TYPE "")
+
+if (CMAKE_BUILD_TYPE MATCHES Release)
+  #-- Configure the OS X Bundle Plist
+  if (APPLE)
+    set(GUI_TYPE MACOSX_BUNDLE)
+  elseif(WIN32)
+    set(GUI_TYPE WIN32)
+  endif()
+endif()
+
 add_executable(${PROJECT_TITLE} ${project_sources})
 
 set_target_properties(${PROJECT_TITLE} PROPERTIES C_STANDARD 90 CXX_STANDARD 11)
 
 target_include_directories(
-  ${PROJECT_TITLE} 
+  ${PROJECT_TITLE}
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src
   PRIVATE ${SDL2_INCLUDE_DIRS})
 
