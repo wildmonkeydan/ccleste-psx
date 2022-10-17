@@ -61,6 +61,7 @@ macro(get_sdl2_mixer version)
     find_package(SDL2_mixer QUIET)
     if(NOT SDL2_mixer_FOUND)
       set(tag "release-${version}")
+      set(SDL2MIXER_INSTALL OFF)
       FetchContent_Declare(
         SDL2_mixer
         GIT_REPOSITORY https://github.com/libsdl-org/SDL_mixer.git
