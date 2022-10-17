@@ -77,10 +77,9 @@ jobs:
         run: |
           export NGAGESDK="$(pwd)/.github/ngage-toolchain"
           echo "NGAGESDK=$NGAGESDK" >> $GITHUB_ENV
-          echo "$NGAGESDK/sdk/6.1/Shared/EPOC32/gcc/bin" >> $GITHUB_PATH
           cmake -S "$NGAGESDK/setup" -B "$NGAGESDK/setup/build" -GNinja
           cmake --build "$NGAGESDK/setup/build"
-          echo "CMAKE_TOOLCHAIN_FILE=$NGAGESDK/cmake/toolchain.cmake" >> $GITHUB_ENV
+          echo "$NGAGESDK/sdk/6.1/Shared/EPOC32/gcc/bin" >> $GITHUB_PATH
 
       - name: Configure project
         run: |
@@ -91,4 +90,5 @@ jobs:
                 ${{ matrix.platform.cmake_flags }}
 
       - name: Build project
+        if: matrix.platform.name != 'Nokia N-Gage' # FIXME: Build hangs indefinitely
         run: cmake --build build --config ${{env.BUILD_TYPE}}
