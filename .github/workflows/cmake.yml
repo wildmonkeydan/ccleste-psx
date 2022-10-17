@@ -32,7 +32,7 @@ jobs:
           - { name: "macOS, Brew",       os: macos-latest,   cmake_flags: "-GNinja", use_binary_deps: true}
           - { name: "Ubuntu, Source",    os: ubuntu-latest,  cmake_flags: "-GNinja", use_binary_deps: false}
           - { name: "Ubuntu, Apt",       os: ubuntu-latest,  cmake_flags: "-GNinja", use_binary_deps: true}
-          # TODO: Restore NGage support
+          - { name: "Nokia N-Gage",      os: windows-latest, cmake_flags: "-GNinja -DBUILD_FOR_NOKIA_NGAGE=ON -DNGAGE_DEBUG=ON -DINSTALL_EKA2L1=ON -DGENERATE_SIS=ON"}
 
     steps:
       - uses: actions/checkout@v3
@@ -64,6 +64,23 @@ jobs:
       - name: Install binary dependencies (macOS)
         if: "runner.os == 'macOS' && matrix.platform.use_binary_deps"
         run: brew install sdl2 sdl2_mixer
+
+      - name: Clone ngage-toolchain
+        if: matrix.platform.name == 'Nokia N-Gage'
+        uses: actions/checkout@v3
+        with:
+          repository: ngagesdk/ngage-toolchain
+          path: .github/ngage-toolchain
+          submodules: true
+      - name: Setup ngage-toolchain
+        if: matrix.platform.name == 'Nokia N-Gage'
+        run: |
+          export NGAGESDK="$(pwd)/.github/ngage-toolchain"
+          echo "NGAGESDK=$NGAGESDK" >> $GITHUB_ENV
+          echo "$NGAGESDK/sdk/6.1/Shared/EPOC32/gcc/bin" >> $GITHUB_PATH
+          cmake -S "$NGAGESDK/setup" -B "$NGAGESDK/setup/build" -GNinja
+          cmake --build "$NGAGESDK/setup/build"
+          echo "CMAKE_TOOLCHAIN_FILE=$NGAGESDK/cmake/toolchain.cmake" >> $GITHUB_ENV
 
       - name: Configure project
         run: |
