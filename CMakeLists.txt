@@ -90,6 +90,16 @@ if(NINTENDO_3DS)
   option(CELESTE_P8_N3DS_DEBUG "Turns on the console on the bottom screen." OFF)
 endif()
 
+if(PSP)
+    create_pbp_file(
+	TARGET ${PROJECT_TITLE}
+        ICON_PATH NULL
+        BACKGROUND_PATH NULL
+        PREVIEW_PATH NULL
+	TITLE ${PROJECT_TITLE}
+    )
+endif()
+
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
   set(COMPILE_OPTIONS
     -Wall
