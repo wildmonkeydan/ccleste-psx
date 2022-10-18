@@ -18,6 +18,10 @@
 #include <time.h>
 #include "celeste.h"
 
+#ifdef N3DS_DEBUG
+#include <3ds.h>
+#endif
+
 static void ErrLog(char* fmt, ...)
 {
     FILE*   f = stderr;
@@ -328,6 +332,9 @@ int main(int argc, char** argv)
 #if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__) && ! defined (NGAGE_DEBUG)
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
     SDL_GameControllerAddMappingsFromRW(SDL_RWFromFile("gamecontrollerdb.txt", "rb"), 1);
+#endif
+#ifdef N3DS_DEBUG
+    consoleInit(GFX_BOTTOM, NULL);
 #endif
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
     SDL_CHECK(screen = SDL_SetVideoMode(176 * scale, 208 * scale, 32, videoflag));
