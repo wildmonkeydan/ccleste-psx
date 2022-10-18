@@ -48,7 +48,7 @@ Mix_Music*   mus[6]  = {NULL};
 #define PICO8_W 128
 #define PICO8_H 128
 
-#if defined (__NGAGE__)
+#if defined (__NGAGE__) || defined (__3DS__)
 static int scale = 1;
 #elif defined (NGAGE_DEBUG)
 static int scale = 3;
@@ -338,6 +338,8 @@ int main(int argc, char** argv)
 #endif
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
     SDL_CHECK(screen = SDL_SetVideoMode(176 * scale, 208 * scale, 32, videoflag));
+#elif defined (__3DS__)
+    SDL_CHECK(screen = SDL_SetVideoMode(400, 240, 32, videoflag));
 #elif defined (__PSP__)
     SDL_CHECK(screen = SDL_SetVideoMode(480 * scale, 272 * scale, 32, videoflag));
 #else
