@@ -22,11 +22,11 @@ supported by SDL 2.
 
 It has been confirmed to work on the following platforms:
 
-  - Linux
-  - Nintendo 3DS
-  - Nokia N-Gage
-  - Sony PSP
-  - Windows
+- Linux
+- Nintendo 3DS
+- Nokia N-Gage
+- Sony PSP
+- Windows
 
 ## Compiling
 
