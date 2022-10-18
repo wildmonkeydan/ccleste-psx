@@ -16,7 +16,7 @@ static SDL_Window*   sdl2_window     = NULL;
 static SDL_Renderer* sdl2_rendr      = NULL;
 
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
-static SDL_Texture* ngage_frame = NULL;
+static SDL_Texture* frame = NULL;
 #endif
 
 static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flags)
@@ -67,9 +67,9 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
         {
         die:
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
-            if (ngage_frame)
+            if (frame)
             {
-                SDL_DestroyTexture(ngage_frame);
+                SDL_DestroyTexture(frame);
             }
 #endif
             if (sdl2_window)
@@ -90,12 +90,16 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
     sdl2_screen = SDL_CreateRGBSurfaceWithFormat(0, width, height, SDL_BITSPERPIXEL(format), format);
     assert(sdl2_screen && sdl2_screen->format->BitsPerPixel == bpp);
 
-#if defined (__NGAGE__) || defined (NGAGE_DEBUG)
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG) || defined (__PSP__) || defined (__3DS__)
     {
 #if defined (__NGAGE__)
         SDL_Surface* frame_sf = SDL_LoadBMP("E:\\System\\Apps\\Celeste\\data\\frame_ngage.bmp");
-#elif defined (_WIN32)
+#elif defined (NGAGE_DEBUG)
         SDL_Surface* frame_sf = SDL_LoadBMP("data\\frame_ngage.bmp");
+#elif defined (__3DS__)
+        SDL_Surface* frame_sf = SDL_LoadBMP("data\\frame_3ds.bmp");
+#elif defined (__PSP__)
+        SDL_Surface* frame_sf = SDL_LoadBMP("data\\frame_psp.bmp");
 #else
         SDL_Surface* frame_sf = SDL_LoadBMP("data/frame_ngage.bmp");
 #endif
@@ -115,14 +119,14 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
                 SDL_Log("Could not enable RLE for surface frame.bmp: %s", SDL_GetError());
             }
 
-            ngage_frame = SDL_CreateTextureFromSurface(sdl2_rendr, frame_sf);
-            if (! ngage_frame)
+            frame = SDL_CreateTextureFromSurface(sdl2_rendr, frame_sf);
+            if (! frame)
             {
                 SDL_Log("Could not create texture from surface: %s", SDL_GetError());
             }
         }
         SDL_FreeSurface(frame_sf);
-        SDL_RenderCopy(sdl2_rendr, ngage_frame, NULL, NULL);
+        SDL_RenderCopy(sdl2_rendr, frame, NULL, NULL);
         SDL_RenderPresent(sdl2_rendr);
     }
 #endif
@@ -166,6 +170,9 @@ static void SDL_Flip(SDL_Surface* screen)
 #elif defined (NGAGE_DEBUG)
     SDL_Rect source = { 0, 0, 384, 384 };
     SDL_Rect dest   = { 72, 120, 384, 384 };
+#elif defined (__PSP__)
+    SDL_Rect source = { 0, 0, 256, 256 };
+    SDL_Rect dest   = { 112, 8, 256, 256 };
 #endif
 
     assert(screen == sdl2_screen);

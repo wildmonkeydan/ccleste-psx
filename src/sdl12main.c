@@ -48,6 +48,8 @@ Mix_Music*   mus[6]  = {NULL};
 static int scale = 1;
 #elif defined (NGAGE_DEBUG)
 static int scale = 3;
+#elif defined (__PSP__)
+static int scale = 2;
 #else
 static int scale = 4;
 #endif
@@ -329,6 +331,8 @@ int main(int argc, char** argv)
 #endif
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
     SDL_CHECK(screen = SDL_SetVideoMode(176 * scale, 208 * scale, 32, videoflag));
+#elif defined (__PSP__)
+    SDL_CHECK(screen = SDL_SetVideoMode(480 * scale, 272 * scale, 32, videoflag));
 #else
     SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
 #endif
