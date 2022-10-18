@@ -68,7 +68,7 @@ cmake ..
 make
 ```
 
-## Nintendo 3DS
+### Nintendo 3DS
 
 You can find the homebrew toolchain [here](https://devkitpro.org/).
 
