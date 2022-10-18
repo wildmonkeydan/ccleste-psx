@@ -18,6 +18,10 @@
 #include <time.h>
 #include "celeste.h"
 
+#ifdef N3DS_DEBUG
+#include <3ds.h>
+#endif
+
 static void ErrLog(char* fmt, ...)
 {
     FILE*   f = stderr;
@@ -44,7 +48,7 @@ Mix_Music*   mus[6]  = {NULL};
 #define PICO8_W 128
 #define PICO8_H 128
 
-#if defined (__NGAGE__)
+#if defined (__NGAGE__) || defined (__3DS__)
 static int scale = 1;
 #elif defined (NGAGE_DEBUG)
 static int scale = 3;
@@ -329,8 +333,13 @@ int main(int argc, char** argv)
     SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
     SDL_GameControllerAddMappingsFromRW(SDL_RWFromFile("gamecontrollerdb.txt", "rb"), 1);
 #endif
+#ifdef N3DS_DEBUG
+    consoleInit(GFX_BOTTOM, NULL);
+#endif
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
     SDL_CHECK(screen = SDL_SetVideoMode(176 * scale, 208 * scale, 32, videoflag));
+#elif defined (__3DS__)
+    SDL_CHECK(screen = SDL_SetVideoMode(400, 240, 32, videoflag));
 #elif defined (__PSP__)
     SDL_CHECK(screen = SDL_SetVideoMode(480 * scale, 272 * scale, 32, videoflag));
 #else
@@ -527,7 +536,7 @@ static void mainLoop(void)
     prev_buttons_state = buttons_state;
     buttons_state = 0;
 
-#if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__) && ! defined (NGAGE_DEBUG)
+#if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__) && ! defined (NGAGE_DEBUG) && ! defined (__3DS__)
     SDL_GameControllerUpdate();
     ReadGamepadInput(&buttons_state);
 

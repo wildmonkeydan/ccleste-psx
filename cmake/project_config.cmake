@@ -26,3 +26,7 @@ endif()
 if(CELESTE_P8_HACKED_BALLOONS)
   add_compile_definitions(${PROJECT_TITLE} CELESTE_P8_HACKED_BALLOONS)
 endif()
+
+if(CELESTE_P8_N3DS_DEBUG)
+  add_compile_definitions(${PROJECT_NAME} N3DS_DEBUG)
+endif()

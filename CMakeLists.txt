@@ -86,6 +86,8 @@ if(NINTENDO_3DS)
     ${PROJECT_TITLE}
     ROMFS "${ROMFS_DIR}"
     SMDH "${SMDH_FILE}")
+  
+  option(CELESTE_P8_N3DS_DEBUG "Turns on the console on the bottom screen." OFF)
 endif()
 
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
