@@ -16,12 +16,17 @@ was still some need for improvement.  Especially since I really wanted
 to get the game to run on the **Nokia N-Gage** and was stuck with a very
 old compiler.
 
-In addition, the SDL 1.2 integration seemed obsolete to me, since SDL 2
-now natively supports the **Nintendo 3DS**.
-
 This fork aims to be more robust and portable than the original and
 should, at least in theory, be compilable from all platforms officially
 supported by SDL 2.
+
+It has been confirmed to work on the following platforms:
+
+- Linux
+- Nintendo 3DS
+- Nokia N-Gage
+- Sony PSP
+- Windows
 
 ## Compiling
 
