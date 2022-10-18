@@ -93,11 +93,11 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
     {
 #if defined (__NGAGE__)
-        SDL_Surface* frame_sf = SDL_LoadBMP("E:\\System\\Apps\\Celeste\\data\\frame.bmp");
+        SDL_Surface* frame_sf = SDL_LoadBMP("E:\\System\\Apps\\Celeste\\data\\frame_ngage.bmp");
 #elif defined (_WIN32)
-        SDL_Surface* frame_sf = SDL_LoadBMP("data\\frame.bmp");
+        SDL_Surface* frame_sf = SDL_LoadBMP("data\\frame_ngage.bmp");
 #else
-        SDL_Surface* frame_sf = SDL_LoadBMP("data/frame.bmp");
+        SDL_Surface* frame_sf = SDL_LoadBMP("data/frame_ngage.bmp");
 #endif
 
         if (! frame_sf)
