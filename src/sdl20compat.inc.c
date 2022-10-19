@@ -19,7 +19,7 @@ static SDL_Texture*  sdl2_screen_tex = NULL;
 static SDL_Window*   sdl2_window     = NULL;
 static SDL_Renderer* sdl2_rendr      = NULL;
 
-#if defined (__NGAGE__) || defined (NGAGE_DEBUG) || defined(__3DS__)
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG) || defined(__3DS__) || defined(__PSP__)
 static SDL_Texture* frame = NULL;
 #endif
 
@@ -70,7 +70,7 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
         if (0)
         {
         die:
-#if defined (__NGAGE__) || defined (NGAGE_DEBUG) || defined(__3DS__)
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG) || defined(__3DS__) || defined(__PSP__)
             if (frame)
             {
                 SDL_DestroyTexture(frame);
@@ -107,7 +107,7 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
 #elif defined (__3DS__)
         SDL_Surface* frame_sf = SDL_LoadBMP("romfs:/data/frame_3ds.bmp");
 #elif defined (__PSP__)
-        SDL_Surface* frame_sf = SDL_LoadBMP("data\\frame_psp.bmp");
+        SDL_Surface* frame_sf = SDL_LoadBMP("data/frame_psp.bmp");
 #else
         SDL_Surface* frame_sf = SDL_LoadBMP("data/frame_ngage.bmp");
 #endif
