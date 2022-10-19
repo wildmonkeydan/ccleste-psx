@@ -353,7 +353,11 @@ int main(int argc, char** argv)
     {
         ErrLog("Mix_Init: %s\n", Mix_GetError());
     }
+    #ifdef __PSP__
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024) < 0)
+    #else
     if (Mix_OpenAudio(22050, AUDIO_S16SYS, 1, 1024) < 0)
+    #endif
     {
         ErrLog("Mix_Init: %s\n", Mix_GetError());
     }
