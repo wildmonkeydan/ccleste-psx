@@ -29,7 +29,7 @@ include(get_sdl2)
 
 get_sdl2("2.24.1")
 
-if(NOT BUILD_FOR_NOKIA_NGAGE AND CELESTE_P8_ENABLE_AUDIO)
+if(NOT BUILD_FOR_NOKIA_NGAGE AND NOT PSP AND CELESTE_P8_ENABLE_AUDIO)
   get_sdl2_mixer("2.6.2")
 endif()
 
@@ -57,6 +57,15 @@ if(NGAGE_DEBUG)
   add_compile_definitions(
     ${PROJECT_TITLE}
     NGAGE_DEBUG)
+endif()
+
+if(PSP AND CELESTE_P8_ENABLE_AUDIO)
+  set(SDL2_MIXER_LIBS
+    SDL2_mixer
+    vorbisfile
+    vorbis
+    ogg
+  )
 endif()
 
 add_compile_definitions(
