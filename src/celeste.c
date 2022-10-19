@@ -2364,8 +2364,8 @@ void Celeste_P8_draw()
     // credits
     if (is_title())
     {
-#if defined (__NGAGE__) || defined (NGAGE_DEBUG)
         P8print("v1.02",54,55,5);
+#if defined (__NGAGE__) || defined (NGAGE_DEBUG)
         P8print("5+7",58,80,5);
 #else
         P8print("x+c",58,80,5);
