@@ -25,7 +25,6 @@ It has been confirmed to work on the following platforms:
 - Linux
 - Nintendo 3DS
 - Nokia N-Gage
-- Sony PSP
 - Windows
 
 ## Compiling
