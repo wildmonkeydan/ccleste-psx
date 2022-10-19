@@ -71,9 +71,14 @@ make
 
 You can find the homebrew toolchain [here](https://devkitpro.org/).
 
-Currently there are no binary packages of SDL2 and SDL2_mixer, as such you need to compile both from source.
+Currently there are no binary packages of SDL2 and SDL2_mixer, as such
+you need to compile both from source.
 
-Note that you need to use the `TREMOR` backend for SDL2_mixer, as using the `STB` backend will cause a crash about 1/3rd into the game. There currently are issues with linking the `TREMOR` backend which will require you to manually link `libogg` to the right of `libvorbisidec` (SDL2_mixer 2.6.2).
+Note that you need to use the `TREMOR` backend for SDL2_mixer, as using
+the `STB` backend will cause a crash about 1/3rd into the game.  There
+currently are issues with linking the `TREMOR` backend which will
+require you to manually link `libogg` to the right of `libvorbisidec`
+(SDL2_mixer 2.6.2).
 
 You can then compile a `.3dsx` executable with the following commands
 
