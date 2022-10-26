@@ -342,7 +342,7 @@ int main(int argc, char** argv)
     SDL_CHECK(screen = SDL_SetVideoMode(176 * scale, 208 * scale, 32, videoflag));
 #elif defined (__3DS__)
     SDL_CHECK(screen = SDL_SetVideoMode(400, 240, 32, videoflag));
-#elif defined (__PSP__) 
+#elif defined (__PSP__)
     SDL_CHECK(screen = SDL_SetVideoMode(480, 272, 32, videoflag));
 #else
     SDL_CHECK(screen = SDL_SetVideoMode(PICO8_W*scale, PICO8_H*scale, 32, videoflag));
