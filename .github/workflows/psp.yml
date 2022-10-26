@@ -30,12 +30,15 @@ jobs:
       - name: Build project
         run: cmake --build build --config ${{ env.BUILD_TYPE }}
 
+      - name: Move files together
+        run: |
+          mkdir output
+          cp build/EBOOT.PBP build/PARAM.SFO output
+          cp -r export/data output
+
       - name: Upload application
         uses: actions/upload-artifact@v3
         with:
           name: PSP_build
-          path: |
-            build/EBOOT.PBP 
-            build/PARAM.SFO 
-            export/data
+          path: output/*
           if-no-files-found: error
