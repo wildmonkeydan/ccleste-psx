@@ -136,6 +136,12 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
         SDL_FreeSurface(frame_sf);
         SDL_RenderCopy(sdl2_rendr, frame, NULL, NULL);
         SDL_RenderPresent(sdl2_rendr);
+
+#if defined (__PSP__) /* very hacky, draw the frame in both framebuffers */
+        SDL_RenderClear(sdl2_rendr);
+        SDL_RenderCopy(sdl2_rendr, frame, NULL, NULL);
+        SDL_RenderPresent(sdl2_rendr);
+#endif
     }
 #endif
 
