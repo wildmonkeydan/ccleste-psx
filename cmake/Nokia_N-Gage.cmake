@@ -15,11 +15,11 @@ else()
     message(FATAL_ERROR "The environment variable NGAGESDK needs to be defined.")
 endif()
 
-project(Celeste C CXX)
-
 include(SDL)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/project_config.cmake)
+
+project(${PROJECT_TITLE} C CXX)
 
 set(UID1 0x1000007a) # KExecutableImageUidValue, e32uid.h
 set(UID2 0x100039ce) # KAppUidValue16, apadef.h
@@ -78,7 +78,7 @@ if(INSTALL_EKA2L1)
 endif()
 
 if(GENERATE_SIS)
-    build_sis_ex(launcher.aif ${RESOURCE_DIR} launcher)
+    build_sis(${RESOURCE_DIR} launcher)
 endif()
 
 add_dependencies(
