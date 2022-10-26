@@ -1,10 +1,10 @@
 # ccleste
 
-[![CMake](https://github.com/mupfdev/ccleste/actions/workflows/cmake.yml/badge.svg)](https://github.com/mupfdev/ccleste/actions/workflows/cmake.yml)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/9ef529e6a22d409089bc35f1566fa269)](https://www.codacy.com/gh/mupfdev/ccleste/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mupfdev/ccleste&amp;utm_campaign=Badge_Grade)
+[![CMake](https://github.com/ngagesdk/ccleste/actions/workflows/cmake.yml/badge.svg)](https://github.com/ngagesdk/ccleste/actions/workflows/cmake.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/5216ba1db09c4dccb561018156e1e4b1)](https://www.codacy.com/gh/ngagesdk/ccleste/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ngagesdk/ccleste&amp;utm_campaign=Badge_Grade)
 
-[![Celeste 1](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-01-tn.png)](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-01.png?raw=true "Celeste 1")
-[![Celeste 2](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-02-tn.png)](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-02.png?raw=true "Celeste 2")
+[![Celeste 1](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-01-tn.png)](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-01.png?raw=true "Celeste 1")
+[![Celeste 2](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-02-tn.png)](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-02.png?raw=true "Celeste 2")
 
 This C source port of the [original
 Celeste](https://www.lexaloffle.com/bbs/?tid=2145) for the PICO-8 was
