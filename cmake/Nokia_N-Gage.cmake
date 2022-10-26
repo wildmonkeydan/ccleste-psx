@@ -78,7 +78,7 @@ if(INSTALL_EKA2L1)
 endif()
 
 if(GENERATE_SIS)
-    build_sis_ex(launcher.rsc ${RESOURCE_DIR} launcher)
+    build_sis_ex(launcher.aif ${RESOURCE_DIR} launcher)
 endif()
 
 add_dependencies(

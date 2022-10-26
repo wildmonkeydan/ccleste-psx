@@ -10,10 +10,10 @@
 (0x101F6F88), 0, 0, 0, {"Series60ProductID"}
 
 ;
-"..\..\out\build\N-Gage\game.exe"-"E:\System\Apps\Celeste\game.exe"
-"..\..\out\build\N-Gage\launcher.aif"-"E:\System\Apps\Celeste\Celeste.aif"
-"..\..\out\build\N-Gage\sis\launcher.app"-"E:\System\Apps\Celeste\Celeste.app"
-"..\..\out\build\N-Gage\sis\launcher.rsc"-"E:\System\Apps\Celeste\Celeste.rsc"
+"..\out\build\N-Gage\game.exe"-"E:\System\Apps\Celeste\game.exe"
+"..\out\build\N-Gage\launcher.aif"-"E:\System\Apps\Celeste\Celeste.aif"
+"..\out\build\N-Gage\launcher.app"-"E:\System\Apps\Celeste\Celeste.app"
+"..\out\build\N-Gage\launcher.rsc"-"E:\System\Apps\Celeste\Celeste.rsc"
 "..\data\font.bmp"-"E:\System\Apps\Celeste\data\font.bmp"
 "..\data\gfx.bmp"-"E:\System\Apps\Celeste\data\gfx.bmp"
 "..\data\frame_ngage.bmp"-"E:\System\Apps\Celeste\data\frame_ngage.bmp"

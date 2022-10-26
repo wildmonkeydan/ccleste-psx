@@ -1,10 +1,10 @@
 # ccleste
 
-[![CMake](https://github.com/mupfdev/ccleste/actions/workflows/cmake.yml/badge.svg)](https://github.com/mupfdev/ccleste/actions/workflows/cmake.yml)
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/9ef529e6a22d409089bc35f1566fa269)](https://www.codacy.com/gh/mupfdev/ccleste/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=mupfdev/ccleste&amp;utm_campaign=Badge_Grade)
+[![CMake](https://github.com/ngagesdk/ccleste/actions/workflows/cmake.yml/badge.svg)](https://github.com/ngagesdk/ccleste/actions/workflows/cmake.yml)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/5216ba1db09c4dccb561018156e1e4b1)](https://www.codacy.com/gh/ngagesdk/ccleste/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=ngagesdk/ccleste&amp;utm_campaign=Badge_Grade)
 
-[![Celeste 1](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-01-tn.png)](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-01.png?raw=true "Celeste 1")
-[![Celeste 2](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-02-tn.png)](https://raw.githubusercontent.com/mupfdev/ccleste/master/media/screenshot-02.png?raw=true "Celeste 2")
+[![Celeste 1](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-01-tn.png)](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-01.png?raw=true "Celeste 1")
+[![Celeste 2](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-02-tn.png)](https://raw.githubusercontent.com/ngagesdk/ccleste/master/media/screenshot-02.png?raw=true "Celeste 2")
 
 This C source port of the [original
 Celeste](https://www.lexaloffle.com/bbs/?tid=2145) for the PICO-8 was
@@ -25,7 +25,6 @@ It has been confirmed to work on the following platforms:
 - Linux
 - Nintendo 3DS
 - Nokia N-Gage
-- Sony PSP
 - Windows
 
 ## Compiling
@@ -72,9 +71,14 @@ make
 
 You can find the homebrew toolchain [here](https://devkitpro.org/).
 
-Currently there are no binary packages of SDL2 and SDL2_mixer, as such you need to compile both from source.
+Currently there are no binary packages of SDL2 and SDL2_mixer, as such
+you need to compile both from source.
 
-Note that you need to use the `TREMOR` backend for SDL2_mixer, as using the `STB` backend will cause a crash about 1/3rd into the game. There currently are issues with linking the `TREMOR` backend which will require you to manually link `libogg` to the right of `libvorbisidec` (SDL2_mixer 2.6.2).
+Note that you need to use the `TREMOR` backend for SDL2_mixer, as using
+the `STB` backend will cause a crash about 1/3rd into the game.  There
+currently are issues with linking the `TREMOR` backend which will
+require you to manually link `libogg` to the right of `libvorbisidec`
+(SDL2_mixer 2.6.2).
 
 You can then compile a `.3dsx` executable with the following commands
 
