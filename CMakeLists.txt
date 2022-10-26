@@ -101,13 +101,12 @@ if(NINTENDO_3DS)
 endif()
 
 if(PSP)
-    create_pbp_file(
-	TARGET ${PROJECT_TITLE}
-        ICON_PATH NULL
-        BACKGROUND_PATH NULL
-        PREVIEW_PATH NULL
-	TITLE ${PROJECT_TITLE}
-    )
+  create_pbp_file(
+	  TARGET ${PROJECT_TITLE}
+    ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/icon.png"
+    BACKGROUND_PATH NULL
+    PREVIEW_PATH NULL
+	  TITLE ${PROJECT_TITLE})
 endif()
 
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")
