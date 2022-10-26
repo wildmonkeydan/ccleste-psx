@@ -25,12 +25,12 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${EXPORT_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${EXPORT_DIR})
 
 include(project_config)
-include(get_sdl2)
+include(get_SDL2)
 
-get_sdl2("2.24.1")
+get_SDL2("2.24.1")
 
 if(NOT BUILD_FOR_NOKIA_NGAGE AND NOT PSP AND CELESTE_P8_ENABLE_AUDIO)
-  get_sdl2_mixer("2.6.2")
+  get_SDL2_mixer("2.6.2")
 endif()
 
 set(GUI_TYPE "")
