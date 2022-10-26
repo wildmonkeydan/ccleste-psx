@@ -60,6 +60,12 @@ static int scale = 2;
 static int scale = 4;
 #endif
 
+#if defined (__PSP__)
+#define AUDIO_FREQ 44100
+#else
+#define AUDIO_FREQ 22050
+#endif
+
 static const SDL_Color base_palette[16] =
 {
     { 0x00, 0x00, 0x00 },
@@ -353,11 +359,7 @@ int main(int argc, char** argv)
     {
         ErrLog("Mix_Init: %s\n", Mix_GetError());
     }
-    #ifdef __PSP__
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 1024) < 0)
-    #else
-    if (Mix_OpenAudio(22050, AUDIO_S16SYS, 1, 1024) < 0)
-    #endif
+    if (Mix_OpenAudio(AUDIO_FREQ, AUDIO_S16SYS, 1, 1024) < 0)
     {
         ErrLog("Mix_Init: %s\n", Mix_GetError());
     }

@@ -65,6 +65,7 @@ if(PSP AND CELESTE_P8_ENABLE_AUDIO)
     vorbisfile
     vorbis
     ogg
+    xmp
   )
 endif()
 
