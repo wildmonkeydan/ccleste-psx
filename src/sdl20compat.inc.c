@@ -93,6 +93,8 @@ static SDL_Surface *SDL_SetVideoMode(int width, int height, int bpp, Uint32 flag
     }
     #if defined(__3DS__)
     sdl2_screen = SDL_CreateRGBSurfaceWithFormat(0, 128, 128, SDL_BITSPERPIXEL(format), format);
+	#elif defined(__PSP__)
+    sdl2_screen = SDL_CreateRGBSurfaceWithFormat(0, 256, 256, SDL_BITSPERPIXEL(format), format);
     #else
     sdl2_screen = SDL_CreateRGBSurfaceWithFormat(0, width, height, SDL_BITSPERPIXEL(format), format);
     #endif
