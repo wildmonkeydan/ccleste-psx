@@ -29,7 +29,7 @@ include(get_SDL2)
 
 get_SDL2("2.24.1")
 
-if(NOT BUILD_FOR_NOKIA_NGAGE AND CELESTE_P8_ENABLE_AUDIO)
+if(NOT BUILD_FOR_NOKIA_NGAGE AND NOT PSP AND CELESTE_P8_ENABLE_AUDIO)
   get_SDL2_mixer("2.6.2")
 endif()
 
@@ -57,6 +57,16 @@ if(NGAGE_DEBUG)
   add_compile_definitions(
     ${PROJECT_TITLE}
     NGAGE_DEBUG)
+endif()
+
+if(PSP AND CELESTE_P8_ENABLE_AUDIO)
+  set(SDL2_MIXER_LIBS
+    SDL2_mixer
+    vorbisfile
+    vorbis
+    ogg
+    xmp
+  )
 endif()
 
 add_compile_definitions(
@@ -88,6 +98,15 @@ if(NINTENDO_3DS)
     SMDH "${SMDH_FILE}")
 
   option(CELESTE_P8_N3DS_DEBUG "Turns on the console on the bottom screen." OFF)
+endif()
+
+if(PSP)
+  create_pbp_file(
+	  TARGET ${PROJECT_TITLE}
+    ICON_PATH "${CMAKE_CURRENT_SOURCE_DIR}/icon.png"
+    BACKGROUND_PATH NULL
+    PREVIEW_PATH NULL
+	  TITLE ${PROJECT_TITLE})
 endif()
 
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")

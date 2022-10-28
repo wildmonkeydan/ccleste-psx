@@ -26,6 +26,7 @@ It has been confirmed to work on the following platforms:
 - Nintendo 3DS
 - Nokia N-Gage
 - Windows
+- Playstation Portable
 
 ## Compiling
 
@@ -86,6 +87,20 @@ You can then compile a `.3dsx` executable with the following commands
 cmake -S. -Bbuild -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/3DS.cmake -DCELESTE_P8_ENABLE_AUDIO=ON
 cmake --build build
 ```
+
+### Playstation Portable
+
+ccleste can also be compiled for the PSP with the included CMake
+configuration and the [PSPDEV](https://pspdev.github.io/) toolchain.
+
+```bash
+mkdir build
+cd build
+psp-cmake ..
+make
+```
+
+It can also be build with audio support by adding the `-DCELESTE_P8_ENABLE_AUDIO=ON` to the psp-cmake command, but the game runs at slightly above half speed with it.
 
 ## Controls
 
