@@ -544,7 +544,7 @@ static void mainLoop(void)
     prev_buttons_state = buttons_state;
     buttons_state = 0;
 
-#if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__) && ! defined (NGAGE_DEBUG) && ! defined (__3DS__)
+#if SDL_MAJOR_VERSION >= 2 && ! defined (__NGAGE__) && ! defined (NGAGE_DEBUG)
     SDL_GameControllerUpdate();
     ReadGamepadInput(&buttons_state);
 

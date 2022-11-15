@@ -1,9 +1,5 @@
 #include<assert.h>
 
-#ifdef __3DS__
-#include <3ds.h>
-#endif
-
 //dummy values
 enum
 {
@@ -206,41 +202,8 @@ static void SDL_Flip(SDL_Surface* screen)
 #endif
     SDL_RenderPresent(sdl2_rendr);
 }
-#if defined(__3DS__)
-#define N3DS_KEY_COUNT 12
-static Uint8 keys[SDL_NUM_SCANCODES] = {SDL_RELEASED};
-const Uint8 *GetN3DSKeystate(int *numkeys) 
-{
-  const static Uint8 keymap[N3DS_KEY_COUNT] = {
-      SDL_SCANCODE_C,      SDL_SCANCODE_X,     SDL_SCANCODE_F9,
-      SDL_SCANCODE_ESCAPE, SDL_SCANCODE_RIGHT, SDL_SCANCODE_LEFT,
-      SDL_SCANCODE_UP,     SDL_SCANCODE_DOWN,  SDL_SCANCODE_D,
-      SDL_SCANCODE_S,      SDL_SCANCODE_C,     SDL_SCANCODE_X,
-  };
-  u32 down, released;
-  int idx;
-  hidScanInput();
-  down = hidKeysDown();
-  released = hidKeysUp();
-  for (idx = 0; idx < N3DS_KEY_COUNT; ++idx) {
-    const Uint8 sdl_key = keymap[idx];
-    u32 key_bit = BIT(idx);
-    if (SDL_RELEASED == keys[sdl_key]) {
-      if (down & key_bit) {
-        keys[sdl_key] = SDL_PRESSED;
-      }
-    } else {
-      if (released & key_bit) {
-        keys[sdl_key] = SDL_RELEASED;
-      }
-    }
-  }
-  return keys;
-}
-#define SDL_GetKeyState GetN3DSKeystate
-#else
+
 #define SDL_GetKeyState SDL_GetKeyboardState
-#endif
 //the above function now returns array indexed by scancodes, so we need to use those constants
 #if defined (__NGAGE__)
 // Reset

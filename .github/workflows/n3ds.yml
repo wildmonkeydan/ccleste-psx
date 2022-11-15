@@ -38,7 +38,7 @@ jobs:
           cmake -S .github/SDL_mixer -B .github/SDL_mixer-build -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/3DS.cmake \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DSDL2MIXER_DEPS_SHARED=OFF \
                 -DSDL2MIXER_SAMPLES=OFF -DSDL2MIXER_FLAC=OFF -DSDL2MIXER_MIDI=OFF -DSDL2MIXER_MOD=OFF \
-                -DSDL2MIXER_MP3=OFF -DSDL2MIXER_OPUS=OFF -DSDL2MIXER_VORBIS=TREMOR
+                -DSDL2MIXER_MP3=OFF -DSDL2MIXER_OPUS=OFF -DSDL2MIXER_VORBIS=TREMOR -DSDL2MIXER_VORBIS_TREMOR_SHARED=OFF
           cmake --build .github/SDL_mixer-build --config ${{ env.BUILD_TYPE }}
           cmake --install .github/SDL_mixer-build --config ${{ env.BUILD_TYPE }}
 
