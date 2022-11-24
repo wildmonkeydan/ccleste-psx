@@ -40,8 +40,8 @@ jobs:
       - name: Update APT packages (Ubuntu)
         if: runner.os == 'Linux'
         run: |
-          sudo apt update
-          sudo apt upgrade -y
+          sudo apt-get update
+          sudo apt-get upgrade -y
 
       - name: Install build dependencies (Ubuntu)
         if: runner.os == 'Linux'
