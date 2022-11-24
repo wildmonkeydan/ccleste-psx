@@ -18,15 +18,10 @@ macro(get_SDL2 version)
   else()
     find_package(SDL2 QUIET)
     if(NOT SDL2_FOUND)
-      if(NINTENDO_3DS) # TODO: Remove when added in a release
-        set(tag "origin/main")
-      else()
-        set(tag "release-${version}")
-      endif()
       FetchContent_Declare(
         SDL2
         GIT_REPOSITORY https://github.com/libsdl-org/SDL.git
-        GIT_TAG "${tag}")
+        GIT_TAG "release-${version}")
       FetchContent_MakeAvailable(SDL2)
       set(SDL2_LIBRARIES SDL2::SDL2main SDL2::SDL2)
     endif()
