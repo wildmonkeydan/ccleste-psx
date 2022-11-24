@@ -8,13 +8,13 @@ macro(get_SDL2 version)
       SDL2
       URL https://github.com/libsdl-org/SDL/releases/download/release-${version}/SDL2-devel-${version}-VC.zip
       URL_HASH
-        SHA256=ff0dfdd8e89c2cef3be8378e4a39c27b5ee7acb689a7cb09aa14dd14242f9a9c)
+        SHA256=3dd66b8ebd32fc2110fbffccc82ffb6b9838de382aff641a38a66a64d480f5f9)
   elseif(MINGW)
     FetchContent_Declare(
       SDL2
       URL https://github.com/libsdl-org/SDL/releases/download/release-${version}/SDL2-devel-${version}-mingw.zip
       URL_HASH
-        SHA256=8d0c8adee4ac3a66f6bc8cbd8e9724d5ed160af365ae362d3a4ef68df26da9da)
+        SHA256=aaa0b91777434d0c3d26fe2f1b134bc4966eaec87d442cceed987675e9b9b6c)
   else()
     find_package(SDL2 QUIET)
     if(NOT SDL2_FOUND)
