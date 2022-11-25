@@ -19,6 +19,7 @@ jobs:
         with:
           repository: libsdl-org/SDL
           path: .github/SDL
+          ref: release-2.26.0
       - name: Install SDL2
         run: |
           cmake -S .github/SDL -B .github/SDL-build -DCMAKE_TOOLCHAIN_FILE=$DEVKITPRO/cmake/3DS.cmake \
