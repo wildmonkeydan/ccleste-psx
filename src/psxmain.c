@@ -5,6 +5,7 @@
 #include <psxcd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <sys/types.h>
 
 #include "celeste.h"
@@ -21,6 +22,8 @@ static unsigned char ramAddr[1000000];
 // Screen resolution
 #define SCREEN_XRES		320
 #define SCREEN_YRES		240
+#define SCREEN_XOFFSET  96
+#define SCREEN_YOFFSET  56
 
 #define CD_SECTOR_SIZE  2048
 #define BtoS(len) ( ( len + CD_SECTOR_SIZE - 1 ) / CD_SECTOR_SIZE )
@@ -88,6 +91,9 @@ u_long vag_spu_address;                  // address allocated in memory for firs
 u_long spu_start_address;
 u_long get_start_addr;
 u_long transSize;
+
+CdlLOC loc[30];
+int ntoc;
 
 
 
@@ -202,11 +208,18 @@ static CVECTOR basePalette[16]{
 
 static void* initial_game_state = NULL;
 
+static bool paused = false;
+
+static int currentMusic = 2;
+static int mus[6] = { 2,3,4,5,6,NULL };
+
 static uint16_t buttonState = 0;
 
 
 
 void mainLoop();
+static void p8_rectfill(int x0, int y0, int x1, int y1, int col);
+static void p8_print(const char* str, int x, int y, int col);
 
 void init() {
 
@@ -278,6 +291,18 @@ void init() {
 	FntOpen(108, 220, 200, 16, 0, 200);
 }
 
+bool resetButtons() {
+	if (pad->stat == 0) {
+		// For digital pad, dual-analog and dual-shock
+		if ((pad->type == 0x4) || (pad->type == 0x5) || (pad->type == 0x7)) {
+			if (!(pad->btn & PAD_SELECT) && !(pad->btn & PAD_START) && !(pad->btn & PAD_TRIANGLE)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
 u_long sendVAGtoRAM(unsigned int VAG_data_size, unsigned char* VAG_data) {
     u_long size;
     SpuSetTransferMode(SPU_TRANSFER_BY_DMA);                              // DMA transfer; can do other processing during transfer
@@ -304,6 +329,21 @@ void spu_LoadVAG(u_long* data, unsigned long channel) {
     get_start_addr = SpuGetTransferStartAddr();                                        // SpuGetTransferStartAddr() returns current sound buffer transfer start address.
     transSize = sendVAGtoRAM(SWAP_ENDIAN32(VAGfileHeader->dataSize), (u_char*)data);
     setVoiceAttr(pitch, channel, vag_spu_address);
+}
+
+void cdMusic_Ready() {
+	u_char result;
+	uint8_t cmd = CdlModeDA | CdlModeRept;
+	while ((ntoc = CdGetToc(loc)) == 0) { 		/* Read TOC */
+		printf("No TOC found: please use CD-DA disc...\n");
+	}
+
+	for (int i = 1; i < ntoc; i++) {
+		CdIntToPos(CdPosToInt(&loc[i]) - 74, &loc[i]);
+	}
+	CdControlB(CdlSetmode, &cmd, &result);
+	VSync(3);
+	printf("Result: %d", (int)result);
 }
 
 uint32_t* LoadFile(const char* filename) {
@@ -403,6 +443,7 @@ int main(void) {
 	int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
 
 	init();
+	cdMusic_Ready();
 
 	LoadData();
 
@@ -423,5 +464,180 @@ int main(void) {
 }
 
 void mainLoop() {
+	static int resetInputTimer = 0;
+	uint16_t prevButtons = buttonState;
 
+	//hold select+start+triangle to reset
+	if (initial_game_state != NULL && resetButtons()) {
+		resetInputTimer++;
+		if (resetInputTimer >= 30)
+		{
+			resetInputTimer = 0;
+			paused = false;
+			Celeste_P8_load_state(initial_game_state);
+			Celeste_P8_set_rndseed(rand());
+
+			Celeste_P8_init();
+		}
+	}
+	else {
+		resetInputTimer = 0;
+	}
+
+	prevButtons = buttonState;
+	buttonState = 0;
+
+	if (pad->stat == 0) {
+		if ((pad->type == 0x4) || (pad->type == 0x5) || (pad->type == 0x7)) {
+			if (!(pad->btn & PAD_LEFT))  buttonState |= (1 << 0);
+			if (!(pad->btn & PAD_RIGHT)) buttonState |= (1 << 1);
+			if (!(pad->btn & PAD_UP))    buttonState |= (1 << 2);
+			if (!(pad->btn & PAD_DOWN))  buttonState |= (1 << 3);
+			if (!(pad->btn & PAD_CROSS)) buttonState |= (1 << 4);
+			if (!(pad->btn & PAD_CIRCLE)) buttonState |= (1 << 5);
+			if ((pad->type == 0x5) || (pad->type == 0x7)) {
+				if ((pad->ls_x - 128) < -64) {
+					buttonState |= (1 << 0);
+				}
+				if ((pad->ls_x - 128) > 64) {
+					buttonState |= (1 << 1);
+				}
+				if ((pad->ls_y - 128) < -64) {
+					buttonState |= (1 << 2);
+				}
+				if ((pad->ls_y - 128) > 64) {
+					buttonState |= (1 << 3);
+				}
+			}
+			if (!(pad->btn & PAD_START)) {
+
+				//Music Stuff
+
+				paused = !paused;
+			}
+		}
+	}
+
+	if (paused)
+	{
+		const int x0 = PICO8_W / 2 - 3 * 4, y0 = 8;
+
+		p8_rectfill(x0 - 1, y0 - 1, 6 * 4 + x0 + 1, 6 + y0 + 1, 6);
+		p8_rectfill(x0, y0, 6 * 4 + x0, 6 + y0, 0);
+		p8_print("paused", x0 + 1, y0 + 1, 7);
+	}
+	else
+	{
+		Celeste_P8_update();
+		Celeste_P8_draw();
+	}
+
+	// Wait for GPU to finish drawing and vertical retrace
+	DrawSync(0);
+	VSync(0);
+
+	// Swap buffers
+	db_active ^= 1;
+	db_nextpri = db[db_active].p;
+
+	// Clear the OT of the next frame
+	if (!paused) {
+		ClearOTagR((uint32_t*)db[db_active].ot, OT_LEN);
+	}
+
+	// Apply display/drawing environments
+	PutDrawEnv(&db[db_active].draw);
+	PutDispEnv(&db[db_active].disp);
+
+	// Enable display
+	SetDispMask(1);
+
+	// Start drawing the OT of the last buffer
+	DrawOTag((uint32_t*)db[1 - db_active].ot + (OT_LEN - 1));
+}
+
+static void p8_rectfill(int x0, int y0, int x1, int y1, int col)
+{
+	int w = (x1 - x0 + 1);
+	int h = (y1 - y0 + 1);
+	if (w > 0 && h > 0)
+	{
+		TILE* tile = (TILE*)db_nextpri;
+
+		setTile(tile);
+		setWH(tile, w, h);
+		setXY0(tile, x0 + SCREEN_XOFFSET, y0 + SCREEN_YOFFSET);
+		setRGB0(tile, basePalette[col % 16].r, basePalette[col % 16].g, basePalette[col % 16].b);
+
+		addPrim(&db[db_active].ot, tile);
+		tile++;
+		db_nextpri += sizeof(TILE);
+	}
+}
+
+static void p8_print(const char* str, int x, int y, int col)
+{
+	SPRT_8* sprt;
+	char c;
+	for (c = *str; c; c = *(++str))
+	{
+		RECT srcrc;
+		c &= 0x7F;
+		srcrc.x = 8 * (c % 16);
+		srcrc.y = 8 * (c / 16);
+		srcrc.w = srcrc.h = 8;
+
+		sprt = (SPRT_8*)db_nextpri;
+
+		setSprt8(sprt);
+		setXY0(sprt, x, y);
+		setUV0(sprt, srcrc.x, srcrc.y);
+		setClut(sprt, 640, 480);
+		setRGB0(sprt, 128, 128, 128);
+
+		addPrim(&db[db_active].ot, sprt);
+		sprt++;
+		db_nextpri += sizeof(SPRT_8);
+		
+		x += 4;
+	}
+
+	// Set Font T-Page
+
+	DR_TPAGE* tprit = (DR_TPAGE*)db_nextpri;
+
+	setDrawTPage(tprit, 0, 1, getTPage(0 & 0x3, 0, 640, 256));
+	addPrim(&db[db_active].ot, tprit);
+	tprit++;
+
+	db_nextpri += sizeof(DR_TPAGE);
+}
+
+int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
+	static int camera_x = 0, camera_y = 0;
+	va_list args;
+
+#define   INT_ARG() va_arg(args, int)
+#define  BOOL_ARG() (Celeste_P8_bool_t)va_arg(args, int)
+#define RET_INT(_i)   do {ret = (_i); goto end;} while (0)
+#define RET_BOOL(_b) RET_INT(!!(_b))
+
+	switch (call) {
+	case CELESTE_P8_MUSIC: //music(idx,fade,mask)
+		int index = INT_ARG();
+		int fade = INT_ARG(); // I'll add fading another time
+		int mask = INT_ARG();
+
+		(void)mask; //we do not care about this since the PSX keeps sounds and music separate (kinda)
+
+		if (index == -1) { //stop playing
+			CdControlB(CdlStop, 0, 0);
+		}
+		else if (mus[index / 10])
+		{
+			CdControlB(CdlPlay, (u_char*)&loc[mus[index / 10]], 0);
+		}
+		break;
+
+	}
 }
