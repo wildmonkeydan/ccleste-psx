@@ -7,8 +7,11 @@
 #include <stdlib.h>
 #include <stdarg.h>
 #include <sys/types.h>
+#include <assert.h>
+#include <string.h>
 
 #include "celeste.h"
+#include "tilemap.h"
 
 static unsigned char ramAddr[1000000];
 
@@ -92,7 +95,7 @@ u_long spu_start_address;
 u_long get_start_addr;
 u_long transSize;
 
-CdlLOC loc[30];
+CdlLOC loc[14];
 int ntoc;
 
 
@@ -206,6 +209,8 @@ static CVECTOR basePalette[16]{
     { 0xff, 0xcc, 0xaa, 0 }
 };
 
+static CVECTOR palette[16];
+
 static void* initial_game_state = NULL;
 
 static bool paused = false;
@@ -214,6 +219,9 @@ static int currentMusic = 2;
 static int mus[6] = { 2,3,4,5,6,NULL };
 
 static uint16_t buttonState = 0;
+
+
+u_char currentTPage = 0;
 
 
 
@@ -447,6 +455,9 @@ int main(void) {
 
 	LoadData();
 
+	// Set to the default palette
+	memcpy(palette, basePalette, sizeof(palette));
+
 	Celeste_P8_set_call_func(pico8emu);
 
 	initial_game_state = malloc(Celeste_P8_get_state_size());
@@ -613,9 +624,95 @@ static void p8_print(const char* str, int x, int y, int col)
 	db_nextpri += sizeof(DR_TPAGE);
 }
 
+static int gettileflag(int tile, int flag)
+{
+	return tile < sizeof(tile_flags) / sizeof(*tile_flags) && (tile_flags[tile] & (1 << flag)) != 0;
+}
+
+unsigned long soundId2SPUChannel(int id) {
+	switch (id) {
+	case 0:
+		return SPU_01CH;
+		break;
+	case 1:
+		return SPU_02CH;
+		break;
+	case 2:
+		return SPU_03CH;
+		break;
+	case 3:
+		return SPU_04CH;
+		break;
+	case 4:
+		return SPU_05CH;
+		break;
+	case 5:
+		return SPU_06CH;
+		break;
+	case 6:
+		return SPU_07CH;
+		break;
+	case 7:
+		return SPU_08CH;
+		break;
+	case 8:
+		return SPU_09CH;
+		break;
+	case 9:
+		return SPU_10CH;
+		break;
+	case 10:
+		return SPU_11CH;
+		break;
+	case 11:
+		return SPU_12CH;
+		break;
+	case 12:
+		return SPU_13CH;
+		break;
+	case 13:
+		return SPU_14CH;
+		break;
+	case 14:
+		return SPU_15CH;
+		break;
+	case 15:
+		return SPU_16CH;
+		break;
+	case 16:
+		return SPU_17CH;
+		break;
+	case 17:
+		return SPU_18CH;
+		break;
+	case 18:
+		return SPU_19CH;
+		break;
+	case 19:
+		return SPU_20CH;
+		break;
+	case 20:
+		return SPU_21CH;
+		break;
+	case 21:
+		return SPU_22CH;
+		break;
+	case 22:
+		return SPU_23CH;
+		break;
+	default:
+		return SPU_00CH;
+		break;
+	}
+}
+
 int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 	static int camera_x = 0, camera_y = 0;
 	va_list args;
+	int ret = 0;
+	SPRT_8* sprt;
+	DR_TPAGE* tprit;
+	LINE_F2* line;
 
 #define   INT_ARG() va_arg(args, int)
 #define  BOOL_ARG() (Celeste_P8_bool_t)va_arg(args, int)
@@ -636,8 +733,240 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		else if (mus[index / 10])
 		{
 			CdControlB(CdlPlay, (u_char*)&loc[mus[index / 10]], 0);
+			currentMusic = mus[index / 10];
 		}
 		break;
+	case CELESTE_P8_SPR:
+		int sprite = INT_ARG();
+		int x = INT_ARG();
+		int y = INT_ARG();
+		int cols = INT_ARG();
+		int rows = INT_ARG();
+		int flipx = BOOL_ARG();
+		int flipy = BOOL_ARG(); // Not Supported / Used
 
+		assert(rows == 1 && cols == 1);
+
+		if (sprite >= 0) {
+
+			int flip = flipx ? 64 : 0;
+
+			sprt = (SPRT_8*)db_nextpri;
+
+			setSprt8(sprt);
+			setXY0(sprt, x + SCREEN_XOFFSET, y + SCREEN_YOFFSET);
+			setUV0(sprt, 8 * (sprite % 16), 8 * (sprite / 16) + flip);
+			setClut(sprt, 640, 240);
+			setRGB0(sprt, 128, 128, 128);
+
+			addPrim(&db[db_active].ot, sprt);
+			sprt++;
+			db_nextpri += sizeof(SPRT_8);
+
+			if (currentTPage != 0) {
+				tprit = (DR_TPAGE*)db_nextpri;
+
+				setDrawTPage(tprit, 0, 1, getTPage(0 & 0x3, 0, 640, 0));
+				addPrim(&db[db_active].ot, tprit);
+				tprit++;
+
+				db_nextpri += sizeof(DR_TPAGE);
+
+				currentTPage = 0;
+			}
+		}
+		break;
+	case CELESTE_P8_BTN:
+		int b = INT_ARG();
+		assert(b >= 0 && b <= 5);
+		RET_BOOL(buttonState & (1 << b));
+		break;
+	case CELESTE_P8_SFX:
+		int id = INT_ARG();
+
+		spu_playSFX(soundId2SPUChannel(id));
+
+		break;
+	case CELESTE_P8_PAL:
+		int a = INT_ARG();
+		int b = INT_ARG();
+		if (a >= 0 && a < 16 && b >= 0 && b < 16)
+		{
+			//swap palette colors
+			palette[a].r = basePalette[b].r;
+			palette[a].g = basePalette[b].g;
+			palette[a].b = basePalette[b].b;
+			palette[a].cd = basePalette[b].cd;
+		}
+		break;
+	case CELESTE_P8_PAL_RESET:
+
+		memcpy(palette, basePalette, sizeof(palette));
+
+		break;
+	case CELESTE_P8_CIRCFILL:
+		int cx = INT_ARG() - camera_x;
+		int cy = INT_ARG() - camera_y;
+		int r = INT_ARG();
+		int col = INT_ARG();
+
+		if (r <= 1)
+		{
+			RECT rect_a = { (cx - 1), cy, 3, 1 };
+			RECT rect_b = { cx, (cy - 1), 1, 3 };
+
+			p8_rectfill(rect_a.x, rect_a.y, rect_a.x + rect_a.h, rect_a.y + rect_a.w, col);
+			p8_rectfill(rect_b.x, rect_b.y, rect_b.x + rect_b.h, rect_b.y + rect_b.w, col);
+		}
+		else if (r <= 2)
+		{
+			RECT rect_a = { (cx - 2), (cy - 1), 5, 3 };
+			RECT rect_b = { (cx - 1), (cy - 2), 3, 5 };
+
+			p8_rectfill(rect_a.x, rect_a.y, rect_a.x + rect_a.h, rect_a.y + rect_a.w, col);
+			p8_rectfill(rect_b.x, rect_b.y, rect_b.x + rect_b.h, rect_b.y + rect_b.w, col);
+		}
+		else if (r <= 3)
+		{
+			RECT rect_a = { (cx - 3), (cy - 1), 7, 3 };
+			RECT rect_b = { (cx - 1), (cy - 3), 3, 7 };
+			RECT rect_c = { (cx - 2), (cy - 2), 5, 5 };
+
+			p8_rectfill(rect_a.x, rect_a.y, rect_a.x + rect_a.h, rect_a.y + rect_a.w, col);
+			p8_rectfill(rect_b.x, rect_b.y, rect_b.x + rect_b.h, rect_b.y + rect_b.w, col);
+			p8_rectfill(rect_c.x, rect_c.y, rect_c.x + rect_c.h, rect_c.y + rect_c.w, col);
+		}
+		else  //i dont think the game uses this
+		{
+			/*int f = 1 - r; //used to track the progress of the drawn circle (since its semi-recursive)
+			int ddFx = 1;   //step x
+			int ddFy = -2 * r; //step y
+			int x = 0;
+			int y = r;
+
+			//this algorithm doesn't account for the diameters
+			//so we have to set them manually
+			p8_line(cx, cy - y, cx, cy + r, col);
+			p8_line(cx + r, cy, cx - r, cy, col);
+
+			while (x < y)
+			{
+				if (f >= 0)
+				{
+					y--;
+					ddFy += 2;
+					f += ddFy;
+				}
+				x++;
+				ddFx += 2;
+				f += ddFx;
+
+				//build our current arc
+				p8_line(cx + x, cy + y, cx - x, cy + y, col);
+				p8_line(cx + x, cy - y, cx - x, cy - y, col);
+				p8_line(cx + y, cy + x, cx - y, cy + x, col);
+				p8_line(cx + y, cy - x, cx - y, cy - x, col);
+			}*/
+		}
+		break;
+	case CELESTE_P8_PRINT:
+		const char* str = va_arg(args, const char*);
+		int x = INT_ARG() - camera_x;
+		int y = INT_ARG() - camera_y;
+		int col = INT_ARG() % 16;
+
+		p8_print(str, x, y, col);
+
+		currentTPage = 1;
+		break;
+	case CELESTE_P8_RECTFILL:
+		int x0 = INT_ARG() - camera_x;
+		int y0 = INT_ARG() - camera_y;
+		int x1 = INT_ARG() - camera_x;
+		int y1 = INT_ARG() - camera_y;
+		int col = INT_ARG();
+
+		p8_rectfill(x0, y0, x1, y1, col);
+		break;
+	case CELESTE_P8_LINE:
+		int x0 = INT_ARG() - camera_x;
+		int y0 = INT_ARG() - camera_y;
+		int x1 = INT_ARG() - camera_x;
+		int y1 = INT_ARG() - camera_y;
+		int col = INT_ARG();
+
+		line = (LINE_F2*)db_nextpri;
+
+		setLineF2(line);
+		setXY2(line, x0 + SCREEN_XOFFSET, y0 + SCREEN_YOFFSET, x1 + SCREEN_XOFFSET, y1 + SCREEN_YOFFSET);
+		setRGB0(line, palette[col].r, palette[col].g, palette[col].b);
+
+		addPrim(&db[db_active].ot, line);
+		line++;
+		db_nextpri += sizeof(LINE_F2);
+
+		break;
+	case CELESTE_P8_MGET:
+		int tx = INT_ARG();
+		int ty = INT_ARG();
+
+		RET_INT(tilemap_data[tx + ty * 128]);
+		break;
+	case CELESTE_P8_FGET:
+		int tile = INT_ARG();
+		int flag = INT_ARG();
+
+		RET_INT(gettileflag(tile, flag));
+		break;
+	case CELESTE_P8_CAMERA:
+		camera_x = INT_ARG();
+		camera_y = INT_ARG();
+		break;
+	case CELESTE_P8_MAP:
+		int mx = INT_ARG(), my = INT_ARG();
+		int tx = INT_ARG(), ty = INT_ARG();
+		int mw = INT_ARG(), mh = INT_ARG();
+		int mask = INT_ARG();
+		int x, y;
+
+		for (x = 0; x < mw; x++)
+		{
+			for (y = 0; y < mh; y++)
+			{
+				int tile = tilemap_data[x + mx + (y + my) * 128];
+				//hack
+				if (mask == 0 || (mask == 4 && tile_flags[tile] == 4) || gettileflag(tile, mask != 4 ? mask - 1 : mask))
+				{
+					sprt = (SPRT_8*)db_nextpri;
+
+					setSprt8(sprt);
+					setXY0(sprt, (tx + x * 8 - camera_x) + SCREEN_XOFFSET, (ty + y * 8 - camera_y) + SCREEN_YOFFSET);
+					setUV0(sprt, 8 * (tile % 16), 8 * (tile / 16));
+					setClut(sprt, 640, 240);
+					setRGB0(sprt, 128, 128, 128);
+
+					addPrim(&db[db_active].ot, sprt);
+					sprt++;
+					db_nextpri += sizeof(SPRT_8);
+
+					if (currentTPage != 0) {
+						tprit = (DR_TPAGE*)db_nextpri;
+
+						setDrawTPage(tprit, 0, 1, getTPage(0 & 0x3, 0, 640, 0));
+						addPrim(&db[db_active].ot, tprit);
+						tprit++;
+
+						db_nextpri += sizeof(DR_TPAGE);
+
+						currentTPage = 0;
+					}
+				}
+			}
+		}
+		break;
 	}
+
+end:
+	va_end(args);
+	return ret;
 }
