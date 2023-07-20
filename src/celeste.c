@@ -6,7 +6,6 @@
  * so _init becomes Celeste_P8_init && music becomes P8music, etc
  */
 
-#include <math.h>
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -405,7 +404,7 @@ void Celeste_P8_init() //identifiers beginning with underscores are reserved in 
 {
     if (!Celeste_P8_call)
     {
-        fprintf(stderr, "Warning: Celeste_P8_call is NULL.. have you called Celeste_P8_set_call_func()?\n");
+        printf("Warning: Celeste_P8_call is NULL.. have you called Celeste_P8_set_call_func()?\n");
     }
 
     PRELUDE();

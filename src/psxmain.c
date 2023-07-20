@@ -5,6 +5,8 @@
 #include <psxcd.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <sys/types.h>
 #include <assert.h>
@@ -216,7 +218,7 @@ static void* initial_game_state = NULL;
 static bool paused = false;
 
 static int currentMusic = 2;
-static int mus[6] = { 2,3,4,5,6,NULL };
+static int mus[6] = { 2,3,4,5,6,-1 };
 
 static uint16_t buttonState = 0;
 
@@ -713,6 +715,12 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 	SPRT_8* sprt;
 	DR_TPAGE* tprit;
 	LINE_F2* line;
+	int b;
+	int col;
+	int x, y;
+	int tx;
+	int x0, y0, x1, y1;
+	int mask;
 
 #define   INT_ARG() va_arg(args, int)
 #define  BOOL_ARG() (Celeste_P8_bool_t)va_arg(args, int)
@@ -723,7 +731,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 	case CELESTE_P8_MUSIC: //music(idx,fade,mask)
 		int index = INT_ARG();
 		int fade = INT_ARG(); // I'll add fading another time
-		int mask = INT_ARG();
+		mask = INT_ARG();
 
 		(void)mask; //we do not care about this since the PSX keeps sounds and music separate (kinda)
 
@@ -738,8 +746,8 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		break;
 	case CELESTE_P8_SPR:
 		int sprite = INT_ARG();
-		int x = INT_ARG();
-		int y = INT_ARG();
+		x = INT_ARG();
+		y = INT_ARG();
 		int cols = INT_ARG();
 		int rows = INT_ARG();
 		int flipx = BOOL_ARG();
@@ -777,7 +785,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		}
 		break;
 	case CELESTE_P8_BTN:
-		int b = INT_ARG();
+		b = INT_ARG();
 		assert(b >= 0 && b <= 5);
 		RET_BOOL(buttonState & (1 << b));
 		break;
@@ -789,7 +797,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		break;
 	case CELESTE_P8_PAL:
 		int a = INT_ARG();
-		int b = INT_ARG();
+		b = INT_ARG();
 		if (a >= 0 && a < 16 && b >= 0 && b < 16)
 		{
 			//swap palette colors
@@ -808,7 +816,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		int cx = INT_ARG() - camera_x;
 		int cy = INT_ARG() - camera_y;
 		int r = INT_ARG();
-		int col = INT_ARG();
+		col = INT_ARG();
 
 		if (r <= 1)
 		{
@@ -871,29 +879,29 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		break;
 	case CELESTE_P8_PRINT:
 		const char* str = va_arg(args, const char*);
-		int x = INT_ARG() - camera_x;
-		int y = INT_ARG() - camera_y;
-		int col = INT_ARG() % 16;
+		x = INT_ARG() - camera_x;
+		y = INT_ARG() - camera_y;
+		col = INT_ARG() % 16;
 
 		p8_print(str, x, y, col);
 
 		currentTPage = 1;
 		break;
 	case CELESTE_P8_RECTFILL:
-		int x0 = INT_ARG() - camera_x;
-		int y0 = INT_ARG() - camera_y;
-		int x1 = INT_ARG() - camera_x;
-		int y1 = INT_ARG() - camera_y;
-		int col = INT_ARG();
+		x0 = INT_ARG() - camera_x;
+		y0 = INT_ARG() - camera_y;
+		x1 = INT_ARG() - camera_x;
+		y1 = INT_ARG() - camera_y;
+		col = INT_ARG();
 
 		p8_rectfill(x0, y0, x1, y1, col);
 		break;
 	case CELESTE_P8_LINE:
-		int x0 = INT_ARG() - camera_x;
-		int y0 = INT_ARG() - camera_y;
-		int x1 = INT_ARG() - camera_x;
-		int y1 = INT_ARG() - camera_y;
-		int col = INT_ARG();
+		x0 = INT_ARG() - camera_x;
+		y0 = INT_ARG() - camera_y;
+		x1 = INT_ARG() - camera_x;
+		y1 = INT_ARG() - camera_y;
+		col = INT_ARG();
 
 		line = (LINE_F2*)db_nextpri;
 
@@ -907,7 +915,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 
 		break;
 	case CELESTE_P8_MGET:
-		int tx = INT_ARG();
+		tx = INT_ARG();
 		int ty = INT_ARG();
 
 		RET_INT(tilemap_data[tx + ty * 128]);
@@ -924,10 +932,9 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		break;
 	case CELESTE_P8_MAP:
 		int mx = INT_ARG(), my = INT_ARG();
-		int tx = INT_ARG(), ty = INT_ARG();
+		tx = INT_ARG(), ty = INT_ARG();
 		int mw = INT_ARG(), mh = INT_ARG();
-		int mask = INT_ARG();
-		int x, y;
+		mask = INT_ARG();
 
 		for (x = 0; x < mw; x++)
 		{

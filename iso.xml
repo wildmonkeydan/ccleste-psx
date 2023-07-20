@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+	This file is processed by CMake and used by mkpsxiso to build the CD image.
+
+	NOTE: all paths are relative to the build directory; if you want to include
+	a file from the source tree, you'll have to prepend its path with
+	${PROJECT_SOURCE_DIR}.
+-->
+<iso_project
+	image_name="${CD_IMAGE_NAME}.bin"
+	cue_sheet="${CD_IMAGE_NAME}.cue"
+>
+	<track type="data">
+		<identifiers
+			system			="PLAYSTATION"
+			volume			="CELESTE CLASSIC"
+			volume_set		="CELESTE CLASSIC"
+			publisher		="MADDYDOESGAMES/MMSOFTWORKS"
+			data_preparer	="PSN00BSDK ${PSN00BSDK_VERSION}"
+			application		="PLAYSTATION"
+			copyright		="README.TXT;1"
+		/>
+
+		<directory_tree>
+			<file name="SYSTEM.CNF"		type="data" source="${PROJECT_SOURCE_DIR}/system.cnf" />
+			<file name="TEMPLATE.EXE"	type="data" source="celeste.exe" />
+			<file name="TEMPLATE.MAP"	type="data" source="celeste.map" />
+
+			<file name="GFX.TIM"	type="data" source="${PROJECT_SOURCE_DIR}/data/gfx.tim" />
+			<file name="FONT.TIM"	type="data" source="${PROJECT_SOURCE_DIR}/data/font.tim" />
+
+			<file name="snd0.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd0.VAG" />
+			<file name="snd1.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd1.VAG" />
+			<file name="snd2.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd2.VAG" />
+			<file name="snd3.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd3.VAG" />
+			<file name="snd4.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd4.VAG" />
+			<file name="snd5.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd5.VAG" />
+			<file name="snd6.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd6.VAG" />
+			<file name="snd7.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd7.VAG" />
+			<file name="snd8.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd8.VAG" />
+			<file name="snd9.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd9.VAG" />
+			<file name="snd13.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd13.VAG" />
+			<file name="snd14.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd14.VAG" />
+			<file name="snd15.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd15.VAG" />
+			<file name="snd16.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd16.VAG" />
+			<file name="snd23.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd23.VAG" />
+			<file name="snd35.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd35.VAG" />
+			<file name="snd37.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd37.VAG" />
+			<file name="snd38.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd38.VAG" />
+			<file name="snd40.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd40.VAG" />
+			<file name="snd50.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd50.VAG" />
+			<file name="snd51.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd51.VAG" />
+			<file name="snd54.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd54.VAG" />
+			<file name="snd55.VAG"	type="data" source="${PROJECT_SOURCE_DIR}/data/snd55.VAG" />
+
+			<dummy sectors="1024"/>
+		</directory_tree>
+	</track>
+
+	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus0.ogg" />
+	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus10.ogg" />
+	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus20.ogg" />
+	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus30.ogg" />
+	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus40.ogg" />
+</iso_project>
