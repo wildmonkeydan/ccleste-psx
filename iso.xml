@@ -57,9 +57,9 @@
 		</directory_tree>
 	</track>
 
-	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus0.ogg" />
-	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus10.ogg" />
-	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus20.ogg" />
-	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus30.ogg" />
-	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus40.ogg" />
+	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus0.mp3" />
+	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus10.mp3" />
+	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus20.mp3" />
+	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus30.mp3" />
+	<track type="audio" source="${PROJECT_SOURCE_DIR}/data/mus40.mp3" />
 </iso_project>

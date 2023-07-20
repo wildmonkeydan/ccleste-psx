@@ -24,6 +24,9 @@
     <ClCompile Include="sdl20compat.inc.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="psxmain.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="celeste.h">

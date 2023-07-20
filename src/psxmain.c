@@ -192,7 +192,8 @@ uint8_t pad_buff[2][34];
 
 
 
-static CVECTOR basePalette[16]{
+
+static CVECTOR basePalette[16] = {
     { 0x00, 0x00, 0x00, 0 },
     { 0x1d, 0x2b, 0x53, 0 },
     { 0x7e, 0x25, 0x53, 0 },
@@ -450,9 +451,10 @@ void LoadData() {
 }
 
 int main(void) {
-	int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
-
+	
 	init();
+	printf("CELESTE CLASSIC PSX\n");
+	int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
 	cdMusic_Ready();
 
 	LoadData();

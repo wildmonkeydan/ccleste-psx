@@ -69,6 +69,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>cmake --build ./build</NMakeBuildCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;CELESTE_P8_FIXEDP;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <IncludePath>C:\PSn00bSDK\include\libpsn00b;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <NMakeBuildCommandLine>cmake --build ./build</NMakeBuildCommandLine>
