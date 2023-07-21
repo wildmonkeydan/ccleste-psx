@@ -345,7 +345,7 @@ static int   deaths, max_djump;
 static bool  start_game;
 static int   start_game_flash;
 
-enum
+enum keys
 {
     k_left  = 0,
     k_right = 1,
@@ -2367,7 +2367,7 @@ void Celeste_P8_draw()
 #if defined (__NGAGE__) || defined (NGAGE_DEBUG)
         P8print("5+7",58,80,5);
 #else
-        P8print("x+c",58,80,5);
+        P8print("x+o",58,80,5);
 #endif
         P8print("maddy thorson",41,96,5);
         P8print("noel berry",46,102,5);

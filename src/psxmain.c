@@ -100,6 +100,8 @@ u_long transSize;
 CdlLOC loc[14];
 int ntoc;
 
+static int next_channel = 0;
+static int next_sample_addr = 0x1010;
 
 
 
@@ -315,10 +317,18 @@ bool resetButtons() {
 }
 
 u_long sendVAGtoRAM(unsigned int VAG_data_size, unsigned char* VAG_data) {
+	
+	int _addr = next_sample_addr;
+	int _size = (VAG_data_size + 63) & 0xffffffc0;
+
     u_long size;
     SpuSetTransferMode(SPU_TRANSFER_BY_DMA);                              // DMA transfer; can do other processing during transfer
-    size = SpuWrite((uint32_t*)VAG_data + sizeof(VAGhdr), VAG_data_size);     // transfer VAG_data_size bytes from VAG_data  address to sound buffer
+	SpuSetTransferStartAddr(_addr);
+
+    size = SpuWrite((uint32_t*)VAG_data + sizeof(VAGhdr), _size);     // transfer VAG_data_size bytes from VAG_data  address to sound buffer
     SpuIsTransferCompleted(SPU_TRANSFER_WAIT);                     // Checks whether transfer is completed and waits for completion
+
+	next_sample_addr = _addr + _size;
     return size;
 }
 
@@ -392,22 +402,22 @@ uint32_t* LoadFile(const char* filename) {
 
 void LoadTexture(const char* filename) {
 
-	TIM_IMAGE* tim = { 0 };
+	TIM_IMAGE tim = { 0 };
 	uint32_t* tex = LoadFile(filename);
 
-	GetTimInfo(tex, tim);
+	GetTimInfo(tex, &tim);
 
 	// Upload pixel data to framebuffer
-	LoadImage(tim->prect, tim->paddr);
+	LoadImage(tim.prect, tim.paddr);
 	DrawSync(0);
 
 	// Upload CLUT to framebuffer
-	if (tim->mode & 0x8) {
-		LoadImage(tim->crect, tim->caddr);
+	if (tim.mode & 0x8) {
+		LoadImage(tim.crect, tim.caddr);
 		DrawSync(0);
 	}
 
-	free(tex);
+	//free(tex);
 }
 
 void LoadSound(const char* filename, unsigned long channel) {
@@ -423,46 +433,51 @@ void LoadData() {
 	LoadTexture("\\GFX.TIM;1");
 	LoadTexture("\\FONT.TIM;1");
 
-	LoadSound("\\snd0.VAG;1", SPU_01CH);
-	LoadSound("\\snd1.VAG;1", SPU_02CH);
-	LoadSound("\\snd2.VAG;1", SPU_03CH);
-	LoadSound("\\snd3.VAG;1", SPU_04CH);
-	LoadSound("\\snd4.VAG;1", SPU_05CH);
-	LoadSound("\\snd5.VAG;1", SPU_06CH);
-	LoadSound("\\snd6.VAG;1", SPU_07CH);
-	LoadSound("\\snd7.VAG;1", SPU_08CH);
-	LoadSound("\\snd8.VAG;1", SPU_09CH);
-	LoadSound("\\snd9.VAG;1", SPU_10CH);
-	LoadSound("\\snd13.VAG;1", SPU_11CH);
-	LoadSound("\\snd14.VAG;1", SPU_12CH);
-	LoadSound("\\snd15.VAG;1", SPU_13CH);
-	LoadSound("\\snd16.VAG;1", SPU_14CH);
-	LoadSound("\\snd23.VAG;1", SPU_15CH);
-	LoadSound("\\snd35.VAG;1", SPU_16CH);
-	LoadSound("\\snd37.VAG;1", SPU_17CH);
-	LoadSound("\\snd38.VAG;1", SPU_18CH);
-	LoadSound("\\snd40.VAG;1", SPU_19CH);
-	LoadSound("\\snd50.VAG;1", SPU_20CH);
-	LoadSound("\\snd51.VAG;1", SPU_21CH);
-	LoadSound("\\snd54.VAG;1", SPU_22CH);
-	LoadSound("\\snd55.VAG;1", SPU_23CH);
+	/*LoadSound("\\SND0.VAG;1", SPU_01CH);
+	LoadSound("\\SND1.VAG;1", SPU_02CH);
+	LoadSound("\\SND2.VAG;1", SPU_03CH);
+	LoadSound("\\SND3.VAG;1", SPU_04CH);
+	LoadSound("\\SND4.VAG;1", SPU_05CH);
+	LoadSound("\\SND5.VAG;1", SPU_06CH);
+	LoadSound("\\SND6.VAG;1", SPU_07CH);
+	LoadSound("\\SND7.VAG;1", SPU_08CH);
+	LoadSound("\\SND8.VAG;1", SPU_09CH);
+	LoadSound("\\SND9.VAG;1", SPU_10CH);
+	LoadSound("\\SND13.VAG;1", SPU_11CH);
+	LoadSound("\\SND14.VAG;1", SPU_12CH);
+	LoadSound("\\SND15.VAG;1", SPU_13CH);
+	LoadSound("\\SND16.VAG;1", SPU_14CH);
+	LoadSound("\\SND23.VAG;1", SPU_15CH);
+	LoadSound("\\SND35.VAG;1", SPU_16CH);
+	LoadSound("\\SND37.VAG;1", SPU_17CH);
+	LoadSound("\\SND38.VAG;1", SPU_18CH);
+	LoadSound("\\SND40.VAG;1", SPU_19CH);
+	LoadSound("\\SND50.VAG;1", SPU_20CH);
+	LoadSound("\\SND51.VAG;1", SPU_21CH);
+	LoadSound("\\SND54.VAG;1", SPU_22CH);
+	LoadSound("\\SND55.VAG;1", SPU_23CH);*/
 
 	printf("Assets Loaded\n");
 }
 
-int main(void) {
+void main(void) {
 	
 	init();
 	printf("CELESTE CLASSIC PSX\n");
 	int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...);
-	cdMusic_Ready();
+	
 
 	LoadData();
+	cdMusic_Ready();
+
+	printf("Music Ready\n");
 
 	// Set to the default palette
-	memcpy(palette, basePalette, sizeof(palette));
+	memcpy(&palette, &basePalette, 64);
 
 	Celeste_P8_set_call_func(pico8emu);
+
+	printf("pico8emu setup    state size = %d\n", Celeste_P8_get_state_size());
 
 	initial_game_state = malloc(Celeste_P8_get_state_size());
 	if (initial_game_state) {
@@ -473,14 +488,18 @@ int main(void) {
 
 	Celeste_P8_init();
 
+	printf("initial save sate done!\n");
+
 	while (1) {
 		mainLoop();
+		printf("loop\n");
 	}
 }
 
 void mainLoop() {
 	static int resetInputTimer = 0;
 	uint16_t prevButtons = buttonState;
+	currentTPage = 1;
 
 	//hold select+start+triangle to reset
 	if (initial_game_state != NULL && resetButtons()) {
@@ -543,6 +562,8 @@ void mainLoop() {
 	}
 	else
 	{
+		printf("unpaused\n");
+
 		Celeste_P8_update();
 		Celeste_P8_draw();
 	}
@@ -592,6 +613,7 @@ static void p8_rectfill(int x0, int y0, int x1, int y1, int col)
 
 static void p8_print(const char* str, int x, int y, int col)
 {
+	printf("Print: %s\n", str);
 	SPRT_8* sprt;
 	char c;
 	for (c = *str; c; c = *(++str))
@@ -717,7 +739,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 	SPRT_8* sprt;
 	DR_TPAGE* tprit;
 	LINE_F2* line;
-	int b;
+	int b = 0;
 	int col;
 	int x, y;
 	int tx;
@@ -728,6 +750,8 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 #define  BOOL_ARG() (Celeste_P8_bool_t)va_arg(args, int)
 #define RET_INT(_i)   do {ret = (_i); goto end;} while (0)
 #define RET_BOOL(_b) RET_INT(!!(_b))
+
+	printf("%d\n",call);
 
 	switch (call) {
 	case CELESTE_P8_MUSIC: //music(idx,fade,mask)
@@ -788,6 +812,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		break;
 	case CELESTE_P8_BTN:
 		b = INT_ARG();
+		printf("btn: %d\n", b);
 		assert(b >= 0 && b <= 5);
 		RET_BOOL(buttonState & (1 << b));
 		break;

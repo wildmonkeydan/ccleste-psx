@@ -23,8 +23,8 @@
 
 		<directory_tree>
 			<file name="SYSTEM.CNF"		type="data" source="${PROJECT_SOURCE_DIR}/system.cnf" />
-			<file name="TEMPLATE.EXE"	type="data" source="celeste.exe" />
-			<file name="TEMPLATE.MAP"	type="data" source="celeste.map" />
+			<file name="celeste.exe"	type="data" source="celeste.exe" />
+			<file name="celeste.map"	type="data" source="celeste.map" />
 
 			<file name="GFX.TIM"	type="data" source="${PROJECT_SOURCE_DIR}/data/gfx.tim" />
 			<file name="FONT.TIM"	type="data" source="${PROJECT_SOURCE_DIR}/data/font.tim" />
