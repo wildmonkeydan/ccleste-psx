@@ -361,10 +361,11 @@ void cdMusic_Ready() {
 
 	for (int i = 1; i < ntoc; i++) {
 		CdIntToPos(CdPosToInt(&loc[i]) - 74, &loc[i]);
+		printf("Track %d  min %d sec %d sector %d\n", loc[i].track, loc[i].minute, loc[i].second, loc[i].sector);
 	}
 	CdControlB(CdlSetmode, &cmd, &result);
 	VSync(3);
-	printf("Result: %d", (int)result);
+	printf("Result: %d", (int)ntoc);
 }
 
 uint32_t* LoadFile(const char* filename) {
@@ -767,6 +768,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 	SPRT_8* sprt;
 	DR_TPAGE* tprit;
 	LINE_F2* line;
+	CdlLOC* track;
 	int b = 0;
 	int col;
 	int x, y;
@@ -794,9 +796,21 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		if (index == -1) { //stop playing
 			CdControlB(CdlStop, 0, 0);
 		}
-		else if (mus[index / 10])
+		else if (mus[index / 10] >= 0)
 		{
-			CdControlB(CdlPlay, (u_char*)&loc[(index / 10) + 4], 0);
+			track->track = loc[(index / 10)].track;
+			track->minute = loc[(index / 10) ].minute;
+			track->second = loc[(index / 10)].second;
+			track->sector = 1;
+
+			printf("Track %d  min %d sec %d sector %d   %d\n", track->track, track->minute, track->second, track->sector, index / 10);
+
+			CdControlB(CdlSetloc, (u_char*)&track, 0);
+			CdControlB(CdlPlay, track, 0);
+
+			DrawSync(0);
+			VSync(0);
+
 			currentMusic = mus[index / 10];
 		}
 		break;
