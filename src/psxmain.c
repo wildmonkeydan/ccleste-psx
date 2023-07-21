@@ -492,14 +492,15 @@ void main(void) {
 
 	while (1) {
 		mainLoop();
-		printf("loop\n");
+		//printf("loop\n");
 	}
 }
 
 void mainLoop() {
 	static int resetInputTimer = 0;
 	uint16_t prevButtons = buttonState;
-	currentTPage = 1;
+	
+	pad = (PADTYPE*)&pad_buff[0][0];
 
 	//hold select+start+triangle to reset
 	if (initial_game_state != NULL && resetButtons()) {
@@ -521,37 +522,6 @@ void mainLoop() {
 	prevButtons = buttonState;
 	buttonState = 0;
 
-	if (pad->stat == 0) {
-		if ((pad->type == 0x4) || (pad->type == 0x5) || (pad->type == 0x7)) {
-			if (!(pad->btn & PAD_LEFT))  buttonState |= (1 << 0);
-			if (!(pad->btn & PAD_RIGHT)) buttonState |= (1 << 1);
-			if (!(pad->btn & PAD_UP))    buttonState |= (1 << 2);
-			if (!(pad->btn & PAD_DOWN))  buttonState |= (1 << 3);
-			if (!(pad->btn & PAD_CROSS)) buttonState |= (1 << 4);
-			if (!(pad->btn & PAD_CIRCLE)) buttonState |= (1 << 5);
-			if ((pad->type == 0x5) || (pad->type == 0x7)) {
-				if ((pad->ls_x - 128) < -64) {
-					buttonState |= (1 << 0);
-				}
-				if ((pad->ls_x - 128) > 64) {
-					buttonState |= (1 << 1);
-				}
-				if ((pad->ls_y - 128) < -64) {
-					buttonState |= (1 << 2);
-				}
-				if ((pad->ls_y - 128) > 64) {
-					buttonState |= (1 << 3);
-				}
-			}
-			if (!(pad->btn & PAD_START)) {
-
-				//Music Stuff
-
-				paused = !paused;
-			}
-		}
-	}
-
 	if (paused)
 	{
 		const int x0 = PICO8_W / 2 - 3 * 4, y0 = 8;
@@ -562,14 +532,15 @@ void mainLoop() {
 	}
 	else
 	{
-		printf("unpaused\n");
 
 		Celeste_P8_update();
+		currentTPage = 1;
 		Celeste_P8_draw();
 	}
 
 	// Wait for GPU to finish drawing and vertical retrace
 	DrawSync(0);
+	VSync(0);
 	VSync(0);
 
 	// Swap buffers
@@ -613,7 +584,6 @@ static void p8_rectfill(int x0, int y0, int x1, int y1, int col)
 
 static void p8_print(const char* str, int x, int y, int col)
 {
-	printf("Print: %s\n", str);
 	SPRT_8* sprt;
 	char c;
 	for (c = *str; c; c = *(++str))
@@ -627,7 +597,7 @@ static void p8_print(const char* str, int x, int y, int col)
 		sprt = (SPRT_8*)db_nextpri;
 
 		setSprt8(sprt);
-		setXY0(sprt, x, y);
+		setXY0(sprt, x + SCREEN_XOFFSET, y + SCREEN_YOFFSET);
 		setUV0(sprt, srcrc.x, srcrc.y);
 		setClut(sprt, 640, 480);
 		setRGB0(sprt, 128, 128, 128);
@@ -648,6 +618,64 @@ static void p8_print(const char* str, int x, int y, int col)
 	tprit++;
 
 	db_nextpri += sizeof(DR_TPAGE);
+}
+
+static bool inputPoll(int btn) {
+	if (pad->stat == 0) {
+		if ((pad->type == 0x4) || (pad->type == 0x5) || (pad->type == 0x7)) {
+
+			switch (btn) {
+			case k_left:
+				if (!(pad->btn & PAD_LEFT))  return true;
+				if ((pad->type == 0x5) || (pad->type == 0x7)) {
+					if ((pad->ls_x - 128) < -64) {
+						return true;
+					}
+				}
+				break;
+			case k_right:
+				if (!(pad->btn & PAD_RIGHT)) return true;
+				if ((pad->type == 0x5) || (pad->type == 0x7)) {
+					if ((pad->ls_x - 128) > 64) {
+						return true;
+					}
+				}
+				break;
+			case k_up:
+				if (!(pad->btn & PAD_UP))    return true;
+				if ((pad->type == 0x5) || (pad->type == 0x7)) {
+					if ((pad->ls_y - 128) < -64) {
+						return true;
+					}
+				}
+				break;
+			case k_down:
+				if (!(pad->btn & PAD_DOWN))  return true;
+				if ((pad->type == 0x5) || (pad->type == 0x7)) {
+					if ((pad->ls_y - 128) > 64) {
+						return true;
+					}
+				}
+				break;
+			case k_jump:
+				if (!(pad->btn & PAD_CROSS)) return true;
+				break;
+			case k_dash:
+				if (!(pad->btn & PAD_CIRCLE)) return true;
+				break;
+
+
+
+			}
+			if (!(pad->btn & PAD_START)) {
+
+					//Music Stuff
+
+					paused = !paused;
+			}
+		}
+	}
+	return false;
 }
 
 static int gettileflag(int tile, int flag)
@@ -746,12 +774,14 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 	int x0, y0, x1, y1;
 	int mask;
 
+	va_start(args, call);
+
 #define   INT_ARG() va_arg(args, int)
 #define  BOOL_ARG() (Celeste_P8_bool_t)va_arg(args, int)
 #define RET_INT(_i)   do {ret = (_i); goto end;} while (0)
 #define RET_BOOL(_b) RET_INT(!!(_b))
 
-	printf("%d\n",call);
+	//printf("%d\n",call);
 
 	switch (call) {
 	case CELESTE_P8_MUSIC: //music(idx,fade,mask)
@@ -766,7 +796,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		}
 		else if (mus[index / 10])
 		{
-			CdControlB(CdlPlay, (u_char*)&loc[mus[index / 10]], 0);
+			CdControlB(CdlPlay, (u_char*)&loc[(index / 10) + 4], 0);
 			currentMusic = mus[index / 10];
 		}
 		break;
@@ -812,9 +842,10 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		break;
 	case CELESTE_P8_BTN:
 		b = INT_ARG();
-		printf("btn: %d\n", b);
 		assert(b >= 0 && b <= 5);
-		RET_BOOL(buttonState & (1 << b));
+		//FntPrint(0,"btn%04x\n", pad->btn);
+		//FntFlush(-1);
+		RET_BOOL(inputPoll(b));
 		break;
 	case CELESTE_P8_SFX:
 		int id = INT_ARG();
@@ -982,21 +1013,18 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 					addPrim(&db[db_active].ot, sprt);
 					sprt++;
 					db_nextpri += sizeof(SPRT_8);
-
-					if (currentTPage != 0) {
-						tprit = (DR_TPAGE*)db_nextpri;
-
-						setDrawTPage(tprit, 0, 1, getTPage(0 & 0x3, 0, 640, 0));
-						addPrim(&db[db_active].ot, tprit);
-						tprit++;
-
-						db_nextpri += sizeof(DR_TPAGE);
-
-						currentTPage = 0;
-					}
 				}
 			}
 		}
+		tprit = (DR_TPAGE*)db_nextpri;
+
+		setDrawTPage(tprit, 0, 1, getTPage(0 & 0x3, 0, 640, 0));
+		addPrim(&db[db_active].ot, tprit);
+		tprit++;
+
+		db_nextpri += sizeof(DR_TPAGE);
+
+		currentTPage = 0;
 		break;
 	}
 

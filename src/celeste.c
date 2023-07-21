@@ -345,15 +345,7 @@ static int   deaths, max_djump;
 static bool  start_game;
 static int   start_game_flash;
 
-enum keys
-{
-    k_left  = 0,
-    k_right = 1,
-    k_up    = 2,
-    k_down  = 3,
-    k_jump  = 4,
-    k_dash  = 5
-};
+
 
 //with this X macro table thing we can define the properties that each object type has, in the original lua code these properties
 //are inferred from the `types` table
@@ -1070,8 +1062,8 @@ static void PLAYER_draw(OBJ* this)
     }
 
     set_hair_color(this->djump);
-    draw_hair(this,this->flip_x ? -1 : 1);
     P8spr(this->spr,this->x,this->y,1,1,this->flip_x,this->flip_y);
+    draw_hair(this,this->flip_x ? -1 : 1);   
     unset_hair_color();
 }
 
@@ -1188,8 +1180,10 @@ static void PLAYER_SPAWN_update(OBJ* this)
 static void PLAYER_SPAWN_draw (OBJ* this)
 {
     set_hair_color(max_djump);
-    draw_hair(this,1);
+    
     P8spr(this->spr,this->x,this->y,1,1,this->flip_x,this->flip_y);
+    draw_hair(this,1);
+    
     unset_hair_color();
 }
 
@@ -1307,8 +1301,8 @@ static void BALLOON_draw(OBJ* this)
 {
     if (this->spr==22)
     {
-        P8spr(13+(int)(this->offset*8)%3,this->x,this->y+6, 1,1,false,false);
         P8spr(this->spr,this->x,this->y,   1,1,false,false);
+        P8spr(13+(int)(this->offset*8)%3,this->x,this->y+6, 1,1,false,false);       
     }
 }
 
@@ -1508,9 +1502,9 @@ static void FLY_FRUIT_draw(OBJ* this)
     {
         off=P8modulo(off+0.25, 3);
     }
-    P8spr(45+off,this->x-6,this->y-2, 1,1,true,false);
+    P8spr(45+off,this->x+6,this->y-2, 1,1,false,false);    
     P8spr(this->spr,this->x,this->y,  1,1,false,false);
-    P8spr(45+off,this->x+6,this->y-2, 1,1,false,false);
+    P8spr(45+off,this->x-6,this->y-2, 1,1,true,false);
 }
 
 //lifeup
@@ -1574,10 +1568,10 @@ static void FAKE_WALL_update(OBJ* this)
 
 static void FAKE_WALL_draw(OBJ* this)
 {
-    P8spr(64,this->x,this->y,     1,1,false,false);
-    P8spr(65,this->x+8,this->y,   1,1,false,false);
-    P8spr(80,this->x,this->y+8,   1,1,false,false);
     P8spr(81,this->x+8,this->y+8, 1,1,false,false);
+    P8spr(80,this->x,this->y+8,   1,1,false,false);
+    P8spr(65,this->x+8,this->y,   1,1,false,false);   
+    P8spr(64,this->x,this->y,     1,1,false,false);
 }
 
 //key
@@ -1661,8 +1655,8 @@ static void PLATFORM_update(OBJ* this)
 
 static void PLATFORM_draw(OBJ* this)
 {
-    P8spr(11,this->x,this->y-1,   1,1,false,false);
     P8spr(12,this->x+8,this->y-1, 1,1,false,false);
+    P8spr(11,this->x,this->y-1,   1,1,false,false);   
 }
 
 //message
@@ -1689,10 +1683,12 @@ static void MESSAGE_draw(OBJ* this)
         {
             if (this->text[i]!='#')
             {
-                char charstr[2];
-                P8rectfill(this->off2.x-2,this->off2.y-2,this->off2.x+7,this->off2.y+6, 7);
+                char charstr[2];                
                 charstr[0] = this->text[i], charstr[1] = '\0';
+                
+                P8rectfill(this->off2.x-2,this->off2.y-2,this->off2.x+7,this->off2.y+6, 7);
                 P8print(charstr,this->off2.x,this->off2.y,0);
+                
                 this->off2.x+=5;
             }
             else
@@ -1735,8 +1731,8 @@ static void BIG_CHEST_draw(OBJ* this)
             this->timer=60;
             this->particle_count = 0;
         }
-        P8spr(96,this->x,this->y,   1,1,false,false);
         P8spr(97,this->x+8,this->y,  1,1,false,false);
+        P8spr(96,this->x,this->y,   1,1,false,false);       
     }
     else if (this->state==1)
     {
@@ -1768,8 +1764,8 @@ static void BIG_CHEST_draw(OBJ* this)
             P8line(this->x+p->x,this->y+8-p->y,this->x+p->x,P8min(this->y+8-p->y+p->h,this->y+8),7);
         }
     }
-    P8spr(112,this->x,this->y+8,   1,1,false,false);
     P8spr(113,this->x+8,this->y+8, 1,1,false,false);
+    P8spr(112,this->x,this->y+8,   1,1,false,false);    
 }
 
 //orb
@@ -1800,12 +1796,13 @@ static void ORB_draw(OBJ* this)
         hit->djump   = 2;
     }
 
-    P8spr(102,this->x,this->y,  1,1,false,false);
+    
     off=(float)frames/30.f;
     for (i=0; i <= 7; i+=1)
     {
         P8circfill(this->x+4+P8cos(off+i/8.f)*8,this->y+4+P8sin(off+i/8.f)*8,1,7);
     }
+    P8spr(102,this->x,this->y,  1,1,false,false);
     if (destroy_self)
     {
         destroy_object(this);
@@ -1835,19 +1832,21 @@ static void FLAG_draw(OBJ* this)
     P8spr(this->spr,this->x,this->y, 1,1,false,false);
     if (this->show)
     {
-        P8rectfill(32,2,96,31,0);
         P8spr(26,55,6, 1,1,false,false);
+        P8rectfill(32,2,96,31,0);
         {
             char str[16];
             snprintf(str, sizeof(str), "x%i", this->score);
             P8print(str,64,9,7);
         }
-        draw_time(49,16);
         {
             char str[16];
             snprintf(str, sizeof(str), "deaths:%i", deaths);
             P8print(str,48,24,7);
-        }
+        }       
+        
+        draw_time(49,16);
+        
     }
     else if (OBJ_check(this, OBJ_PLAYER,0,0))
     {
@@ -1872,7 +1871,7 @@ static void ROOM_TITLE_draw(OBJ* this)
     }
     else if (this->delay<0)
     {
-        P8rectfill(24,58,104,70,0);
+        
         //rect(26,64-10,102,64+10,7)
         //print("//-",31,64-2,13)
         if (room.x==3 && room.y==1)
@@ -1893,7 +1892,7 @@ static void ROOM_TITLE_draw(OBJ* this)
             }
         }
         //print("//-",86,64-2,13)
-
+        P8rectfill(24,58,104,70,0);
         draw_time(4,4);
     }
 }
@@ -1963,6 +1962,7 @@ static void destroy_object(OBJ* obj)
 
 static void kill_player(OBJ* obj)
 {
+    printf("dead");
     int   dead_particles_count = 0;
     float dir;
     sfx_timer  = 12;
@@ -2265,42 +2265,18 @@ void Celeste_P8_draw()
     {
         bg_col=2;
     }
-    P8rectfill(0,0,128,128,bg_col);
+    
 
-    // clouds
-    if (!is_title())
-    {
-        for (i = 0; i <= 16; i++)
-        {
-            CLOUD* c = &clouds[i];
-            c->x += c->spd;
-            P8rectfill(c->x,c->y,c->x+c->w,c->y+4+(1-c->w/64.0)*12,new_bg ? 14 : 1);
-            if (c->x > 128)
-            {
-                c->x = -c->w;
-                c->y = P8rnd(128-8);
-            }
-        }
-    }
+    // draw outside of the screen for screenshake
+    P8rectfill(-5,-5,-1,133,0);
+    P8rectfill(-5,-5,133,-1,0);
+    P8rectfill(-5,128,133,133,0);
+    P8rectfill(128,-5,133,133,0);
 
-    // draw bg terrain
-    P8map(room.x * 16,room.y * 16,0,0,16,16,4);
+    // draw fg terrain
+    P8map(room.x * 16,room.y * 16,0,0,16,16,8);
 
-    // platforms/big chest
-    for (i = 0; i < MAX_OBJECTS; i++)
-    {
-        OBJ* o = &objects[i];
-        if (o->active && (o->type==OBJ_PLATFORM || o->type==OBJ_BIG_CHEST))
-        {
-            draw_object(o);
-        }
-    }
-
-    // draw terrain
-    off=is_title() ? -4 : 0;
-    P8map(room.x*16,room.y * 16,off,0,16,16,2);
-
-    // draw objects
+     // draw objects
     for (i = 0; i < MAX_OBJECTS; i++)
     {
         OBJ*  o = &objects[i];
@@ -2314,11 +2290,28 @@ void Celeste_P8_draw()
 
         //LEMON: draw_object() could have deleted obj, and something could have been moved in its place, so check for that in order not to skip drawing an object
         if (this_id != o->id) goto redo_draw;
+    }   
+
+    // draw terrain
+    off=is_title() ? -4 : 0;
+    P8map(room.x*16,room.y * 16,off,0,16,16,2);
+    //P8rectfill(0,0,128,128,bg_col);
+
+    // platforms/big chest
+    for (i = 0; i < MAX_OBJECTS; i++)
+    {
+        OBJ* o = &objects[i];
+        if (o->active && (o->type==OBJ_PLATFORM || o->type==OBJ_BIG_CHEST))
+        {
+            draw_object(o);
+        }
     }
 
-    // draw fg terrain
-    P8map(room.x * 16,room.y * 16,0,0,16,16,8);
 
+
+    
+    // draw bg terrain
+    P8map(room.x * 16,room.y * 16,0,0,16,16,4);
     // particles
     for (i = 0; i <= 24; i++)
     {
@@ -2353,12 +2346,23 @@ void Celeste_P8_draw()
 
         p++;
     }
+    // clouds
+    if (!is_title())
+    {
+        for (i = 0; i <= 16; i++)
+        {
+            CLOUD* c = &clouds[i];
+            c->x += c->spd;
+            P8rectfill(c->x,c->y,c->x+c->w,c->y+4+(1-c->w/64.0)*12,new_bg ? 14 : 1);
+            if (c->x > 128)
+            {
+                c->x = -c->w;
+                c->y = P8rnd(128-8);
+            }
+        }
+    }
 
-    // draw outside of the screen for screenshake
-    P8rectfill(-5,-5,-1,133,0);
-    P8rectfill(-5,-5,133,-1,0);
-    P8rectfill(-5,128,133,133,0);
-    P8rectfill(128,-5,133,133,0);
+    
 
     // credits
     if (is_title())
@@ -2411,13 +2415,14 @@ static void draw_time(float x, float y)
     int s=seconds;
     int m=minutes%60;
     int h=minutes/60;
-
-    P8rectfill(x,y,x+32,y+6,0);
     {
         char str[27];
         snprintf(str, sizeof(str), "%.2i:%.2i:%.2i", h, m, s);
         P8print(str,x+1,y+1,7);
     }
+
+    P8rectfill(x,y,x+32,y+6,0);
+
 }
 
 // helper functions //

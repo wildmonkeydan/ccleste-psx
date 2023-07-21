@@ -11,6 +11,7 @@
 	cue_sheet="${CD_IMAGE_NAME}.cue"
 >
 	<track type="data">
+		<license file="${PROJECT_SOURCE_DIR}/LICENSEE.DAT"/>
 		<identifiers
 			system			="PLAYSTATION"
 			volume			="CELESTE CLASSIC"

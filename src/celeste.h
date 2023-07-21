@@ -17,6 +17,16 @@ typedef enum
 
 } CELESTE_P8_CALLBACK_TYPE;
 
+enum keys
+{
+    k_left = 0,
+    k_right = 1,
+    k_up = 2,
+    k_down = 3,
+    k_jump = 4,
+    k_dash = 5
+};
+
 typedef _Bool Celeste_P8_bool_t;
 typedef int (*Celeste_P8_cb_func_t) (CELESTE_P8_CALLBACK_TYPE calltype, ...);
 
