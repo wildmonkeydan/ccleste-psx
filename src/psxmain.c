@@ -542,6 +542,7 @@ void mainLoop() {
 	// Wait for GPU to finish drawing and vertical retrace
 	DrawSync(0);
 	VSync(0);
+	DrawSync(0);
 	VSync(0);
 
 	// Swap buffers
@@ -768,7 +769,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 	SPRT_8* sprt;
 	DR_TPAGE* tprit;
 	LINE_F2* line;
-	CdlLOC* track;
+	CdlLOC track;
 	int b = 0;
 	int col;
 	int x, y;
@@ -798,17 +799,19 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		}
 		else if (mus[index / 10] >= 0)
 		{
-			track->track = loc[(index / 10)].track;
-			track->minute = loc[(index / 10) ].minute;
-			track->second = loc[(index / 10)].second;
-			track->sector = 1;
+			track.track = loc[(index / 10)].track;
+			track.minute = loc[(index / 10) ].minute;
+			track.second = loc[(index / 10)].second;
+			track.sector = 1;
 
-			printf("Track %d  min %d sec %d sector %d   %d\n", track->track, track->minute, track->second, track->sector, index / 10);
+			printf("Track %d  min %d sec %d sector %d   %d\n", track.track, track.minute, track.second, track.sector, index / 10);
 
-			CdControlB(CdlSetloc, (u_char*)&track, 0);
-			CdControlB(CdlPlay, track, 0);
+			uint8_t s = 6;
 
-			DrawSync(0);
+			//CdControlB(CdlSetloc, &track, 0);
+			CdControlB(CdlPlay, &s, 0);
+
+			//DrawSync(0);
 			VSync(0);
 
 			currentMusic = mus[index / 10];
