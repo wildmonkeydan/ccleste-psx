@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdio.h>
+#include <psxgpu.h>
+#include <psxapi.h>
 
 #include "celeste.h"
 
@@ -211,6 +213,11 @@ static inline void P8camera(int x, int y) {
 static inline void P8map(int mx, int my, int tx, int ty, int mw, int mh, int mask) {
     Celeste_P8_call(CELESTE_P8_MAP, mx, my, tx, ty, mw, mh, mask);
 }
+
+static inline void P8plyspr(int sprite, int x, int y, int cols, int rows, bool flipx, bool flipy) {
+    Celeste_P8_call(CELESTE_P8_PLYSPR, sprite, x, y, cols, rows, flipx, flipy);
+}
+
 //these values dont matter as set_rndseed should be called before init, as long as they arent both zero
 static unsigned rnd_seed_lo = 0, rnd_seed_hi = 1;
 
@@ -1062,8 +1069,8 @@ static void PLAYER_draw(OBJ* this)
     }
 
     set_hair_color(this->djump);
-    P8spr(this->spr,this->x,this->y,1,1,this->flip_x,this->flip_y);
-    draw_hair(this,this->flip_x ? -1 : 1);   
+    P8plyspr((int)this->spr,(int)this->x,(int)this->y,1, (this->djump == 1 ? 8 : (this->djump == 2 ? (7 + P8flr(((int)(((float)frames) / 3.0)) % 2) * 4) : 12)),this->flip_x,this->flip_y);
+    draw_hair(this,this->flip_x ? -1 : 1);
     unset_hair_color();
 }
 
@@ -1092,6 +1099,7 @@ void create_hair(OBJ* obj)
 
 static void set_hair_color(int djump)
 {
+    //printf("%d\n", (djump == 1 ? 8 : (djump == 2 ? (7 + P8flr(((int)(((float)frames) / 3.0)) % 2) * 4) : 12)));
     P8pal(8,(djump==1 ? 8 : (djump==2 ?(7+P8flr(((int)(((float)frames)/3.0))%2)*4) : 12)));
 }
 
@@ -1115,6 +1123,7 @@ static void draw_hair(OBJ* obj, int facing)
 
 static void unset_hair_color()
 {
+    //DrawSync(0);
     P8pal(8,8);
 }
 
@@ -1181,7 +1190,7 @@ static void PLAYER_SPAWN_draw (OBJ* this)
 {
     set_hair_color(max_djump);
     
-    P8spr(this->spr,this->x,this->y,1,1,this->flip_x,this->flip_y);
+    P8plyspr((int)this->spr,(int)this->x,(int)this->y,1, (max_djump == 1 ? 8 : (max_djump == 2 ? (7 + P8flr(((int)(((float)frames) / 3.0)) % 2) * 4) : 12)),this->flip_x,this->flip_y);
     draw_hair(this,1);
     
     unset_hair_color();
@@ -1686,8 +1695,9 @@ static void MESSAGE_draw(OBJ* this)
                 char charstr[2];                
                 charstr[0] = this->text[i], charstr[1] = '\0';
                 
-                P8rectfill(this->off2.x-2,this->off2.y-2,this->off2.x+7,this->off2.y+6, 7);
+                
                 P8print(charstr,this->off2.x,this->off2.y,0);
+                P8rectfill(this->off2.x-2,this->off2.y-2,this->off2.x+7,this->off2.y+6, 0);
                 
                 this->off2.x+=5;
             }
@@ -2268,10 +2278,10 @@ void Celeste_P8_draw()
     
 
     // draw outside of the screen for screenshake
-    P8rectfill(-5,-5,-1,133,0);
-    P8rectfill(-5,-5,133,-1,0);
-    P8rectfill(-5,128,133,133,0);
-    P8rectfill(128,-5,133,133,0);
+    P8rectfill(-96,-56,-1,189,0);
+    P8rectfill(-96,-56,189,-1,0);
+    P8rectfill(-96,128,189,189,0);
+    P8rectfill(128,-56,189,189,0);
 
     // draw fg terrain
     P8map(room.x * 16,room.y * 16,0,0,16,16,8);
@@ -2395,6 +2405,8 @@ void Celeste_P8_draw()
             P8rectfill(128-diff,0,128,128,0);
         }
     }
+    
+
 }
 
 static void draw_object(OBJ* obj)
@@ -2405,7 +2417,9 @@ static void draw_object(OBJ* obj)
     }
     else if (obj->spr > 0)
     {
+        
         P8spr(obj->spr,obj->x,obj->y,1,1,obj->flip_x,obj->flip_y);
+        //unset_hair_color();
     }
     //if (floorf(obj->spr) != obj->spr) printf("?%g %s\n", obj->spr, OBJ_PROP(obj).nam);
 }

@@ -81,16 +81,16 @@ static unsigned char ramAddr[1000000];
 #define MALLOC_MAX 3            // Max number of time we can call SpuMalloc
 //~ // convert Little endian to Big endian
 #define SWAP_ENDIAN32(x) (((x)>>24) | (((x)>>8) & 0xFF00) | (((x)<<8) & 0x00FF0000) | ((x)<<24))
-typedef struct VAGheader {       // All the values in this header must be big endian
-	char id[4];             // VAGp         4 bytes -> 1 char * 4
-	unsigned int version;          // 4 bytes
-	unsigned int reserved;         // 4 bytes
-	unsigned int dataSize;         // (in bytes) 4 bytes
-	unsigned int samplingFrequency;// 4 bytes
-	char  reserved2[12];    // 12 bytes -> 1 char * 12
-	char  name[16];         // 16 bytes -> 1 char * 16
-	// Waveform data after that
-}VAGhdr;
+typedef struct {
+	uint32_t magic;			// 0x70474156 ("VAGp") for mono files
+	uint32_t version;
+	uint32_t interleave;	// Unused in mono files
+	uint32_t size;			// Big-endian, in bytes
+	uint32_t sample_rate;	// Big-endian, in Hertz
+	uint16_t _reserved[5];
+	uint16_t channels;		// Unused in mono files
+	char     name[16];
+} VAG_Header;
 u_long vag_spu_address;                  // address allocated in memory for first sound file
 // DEBUG : these allow printing values for debugging
 u_long spu_start_address;
@@ -100,8 +100,8 @@ u_long transSize;
 CdlLOC loc[14];
 int ntoc;
 
-static int next_channel = 0;
-static int next_sample_addr = 0x1010;
+int sfxAddr[23];
+int sampleRate = 0;
 
 
 
@@ -126,6 +126,13 @@ static int	db_active = 0;
 static char* db_nextpri;
 
 static RECT	screen_clip;
+
+typedef struct {
+	u_short r : 5;
+	u_short g : 5;
+	u_short b : 5;
+	u_short i : 1;
+} PIX_RGB5;
 
 
 
@@ -216,6 +223,8 @@ static CVECTOR basePalette[16] = {
 
 static CVECTOR palette[16];
 
+static int paletteTranslate[16] = { 0,6,10,7,6,15,1,4,1,5,4,11,13,12,14,13 };
+
 static void* initial_game_state = NULL;
 
 static bool paused = false;
@@ -225,8 +234,14 @@ static int mus[6] = { 2,3,4,5,6,-1 };
 
 static uint16_t buttonState = 0;
 
+static uint32_t* clut;
+static RECT clutArea = { 640, 240, 16, 1 };
 
-u_char currentTPage = 0;
+
+static u_char currentTPage = 1;
+
+static bool repeat = false;
+static int repeatTimer = 0;
 
 
 
@@ -316,22 +331,6 @@ bool resetButtons() {
 	return false;
 }
 
-u_long sendVAGtoRAM(unsigned int VAG_data_size, unsigned char* VAG_data) {
-	
-	int _addr = next_sample_addr;
-	int _size = (VAG_data_size + 63) & 0xffffffc0;
-
-    u_long size;
-    SpuSetTransferMode(SPU_TRANSFER_BY_DMA);                              // DMA transfer; can do other processing during transfer
-	SpuSetTransferStartAddr(_addr);
-
-    size = SpuWrite((uint32_t*)VAG_data + sizeof(VAGhdr), _size);     // transfer VAG_data_size bytes from VAG_data  address to sound buffer
-    SpuIsTransferCompleted(SPU_TRANSFER_WAIT);                     // Checks whether transfer is completed and waits for completion
-
-	next_sample_addr = _addr + _size;
-    return size;
-}
-
 void setVoiceAttr(unsigned int pitch, long channel, unsigned long soundAddr) {
 	SpuSetVoiceVolume(channel, 0x2000, 0x2000);
 	SpuSetVoicePitch(channel, pitch);						//~ Interval (set pitch)
@@ -339,22 +338,65 @@ void setVoiceAttr(unsigned int pitch, long channel, unsigned long soundAddr) {
 	SpuSetVoiceADSR(channel, 0x0, 0x0, 0x0, 0x0, 0xf);
 }
 
-void spu_playSFX(unsigned long channel) {
-    SpuSetKey(1, channel);                               // Set several channels by ORing  each channel bit ; ex : SpuSetKey(SpuOn,SPU_0CH | SPU_3CH | SPU_8CH); channels 0, 3, 8 are on.
+// The first 4 KB of SPU RAM are reserved for capture buffers and psxspu
+// additionally uploads a dummy sample (16 bytes) at 0x1000 by default, so the
+// samples must be placed after those.
+#define ALLOC_START_ADDR 0x1010
+
+static int next_channel = 0;
+static int next_sample_addr = ALLOC_START_ADDR;
+
+int upload_sample(const void* data, int size) {
+	// Round the size up to the nearest multiple of 64, as SPU DMA transfers
+	// are done in 64-byte blocks.
+	int _addr = next_sample_addr;
+	int _size = (size + 63) & 0xffffffc0;
+
+	SpuSetTransferMode(SPU_TRANSFER_BY_DMA);
+	SpuSetTransferStartAddr(_addr);
+
+	SpuWrite((const uint32_t*)data, _size);
+	SpuIsTransferCompleted(SPU_TRANSFER_WAIT);
+
+	next_sample_addr = _addr + _size;
+	return _addr;
 }
 
-void spu_LoadVAG(u_long* data, unsigned long channel) {
-    const VAGhdr* VAGfileHeader = (VAGhdr*)data;
-    unsigned int pitch = (SWAP_ENDIAN32(VAGfileHeader->samplingFrequency) << 12) / 44100L;
-    spu_start_address = SpuSetTransferStartAddr(vag_spu_address);                         // Sets a starting address in the sound buffer
-    get_start_addr = SpuGetTransferStartAddr();                                        // SpuGetTransferStartAddr() returns current sound buffer transfer start address.
-    transSize = sendVAGtoRAM(SWAP_ENDIAN32(VAGfileHeader->dataSize), (u_char*)data);
-    setVoiceAttr(pitch, channel, vag_spu_address);
+void play_sample(int addr, int sample_rate) {
+	int ch = next_channel;
+
+	// Make sure the channel is stopped.
+	SpuSetKey(0, 1 << ch);
+
+	// Set the channel's sample rate and start address. Note that the SPU
+	// expects the sample rate to be in 4.12 fixed point format (with
+	// 1.0 = 44100 Hz) and the address in 8-byte units; psxspu.h provides the
+	// getSPUSampleRate() and getSPUAddr() macros to convert values to these
+	// units.
+	SPU_CH_FREQ(ch) = getSPUSampleRate(sample_rate);
+	SPU_CH_ADDR(ch) = getSPUAddr(addr);
+
+	// Set the channel's volume and ADSR parameters (0x80ff and 0x1fee are
+	// dummy values that disable the ADSR envelope entirely).
+	SPU_CH_VOL_L(ch) = 0x3fff;
+	SPU_CH_VOL_R(ch) = 0x3fff;
+	SPU_CH_ADSR1(ch) = 0x00ff;
+	SPU_CH_ADSR2(ch) = 0x0000;
+
+	// Start the channel.
+	SpuSetKey(1, 1 << ch);
+
+	next_channel = (ch + 1) % 24;
+}
+
+
+void cdMusic_Repeat(int status, u_char* result) {
+	repeat = true;
 }
 
 void cdMusic_Ready() {
 	u_char result;
-	uint8_t cmd = CdlModeDA | CdlModeRept;
+	uint8_t cmd = CdlModeRept | CdlModeDA | CdlModeAP;
 	while ((ntoc = CdGetToc(loc)) == 0) { 		/* Read TOC */
 		printf("No TOC found: please use CD-DA disc...\n");
 	}
@@ -366,6 +408,8 @@ void cdMusic_Ready() {
 	CdControlB(CdlSetmode, &cmd, &result);
 	VSync(3);
 	printf("Result: %d", (int)ntoc);
+
+	CdAutoPauseCallback((CdlCB)cdMusic_Repeat);
 }
 
 uint32_t* LoadFile(const char* filename) {
@@ -418,13 +462,16 @@ void LoadTexture(const char* filename) {
 		DrawSync(0);
 	}
 
-	//free(tex);
+	free(tex);
 }
 
-void LoadSound(const char* filename, unsigned long channel) {
+void LoadSound(const char* filename, int index) {
 	uint32_t* data = LoadFile(filename);
 
-	spu_LoadVAG((u_long*)data, channel);
+	VAG_Header* hdr = (VAG_Header*)data;
+
+	sfxAddr[index] = upload_sample(&hdr[1], SWAP_ENDIAN32(hdr->size));
+	sampleRate = SWAP_ENDIAN32(hdr->sample_rate);
 
 	free(data);
 }
@@ -434,29 +481,37 @@ void LoadData() {
 	LoadTexture("\\GFX.TIM;1");
 	LoadTexture("\\FONT.TIM;1");
 
-	/*LoadSound("\\SND0.VAG;1", SPU_01CH);
-	LoadSound("\\SND1.VAG;1", SPU_02CH);
-	LoadSound("\\SND2.VAG;1", SPU_03CH);
-	LoadSound("\\SND3.VAG;1", SPU_04CH);
-	LoadSound("\\SND4.VAG;1", SPU_05CH);
-	LoadSound("\\SND5.VAG;1", SPU_06CH);
-	LoadSound("\\SND6.VAG;1", SPU_07CH);
-	LoadSound("\\SND7.VAG;1", SPU_08CH);
-	LoadSound("\\SND8.VAG;1", SPU_09CH);
-	LoadSound("\\SND9.VAG;1", SPU_10CH);
-	LoadSound("\\SND13.VAG;1", SPU_11CH);
-	LoadSound("\\SND14.VAG;1", SPU_12CH);
-	LoadSound("\\SND15.VAG;1", SPU_13CH);
-	LoadSound("\\SND16.VAG;1", SPU_14CH);
-	LoadSound("\\SND23.VAG;1", SPU_15CH);
-	LoadSound("\\SND35.VAG;1", SPU_16CH);
-	LoadSound("\\SND37.VAG;1", SPU_17CH);
-	LoadSound("\\SND38.VAG;1", SPU_18CH);
-	LoadSound("\\SND40.VAG;1", SPU_19CH);
-	LoadSound("\\SND50.VAG;1", SPU_20CH);
-	LoadSound("\\SND51.VAG;1", SPU_21CH);
-	LoadSound("\\SND54.VAG;1", SPU_22CH);
-	LoadSound("\\SND55.VAG;1", SPU_23CH);*/
+	LoadSound("\\SND0.VAG;1", 0);
+	LoadSound("\\SND1.VAG;1", 1);
+	LoadSound("\\SND2.VAG;1", 2);
+	LoadSound("\\SND3.VAG;1", 3);
+	LoadSound("\\SND4.VAG;1", 4);
+	LoadSound("\\SND5.VAG;1", 5);
+	LoadSound("\\SND6.VAG;1", 6);
+	LoadSound("\\SND7.VAG;1", 7);
+	LoadSound("\\SND8.VAG;1", 8);
+	LoadSound("\\SND9.VAG;1", 9);
+	LoadSound("\\SND13.VAG;1", 10);
+	LoadSound("\\SND14.VAG;1", 11);
+	LoadSound("\\SND15.VAG;1", 12);
+	LoadSound("\\SND16.VAG;1", 13);
+	LoadSound("\\SND23.VAG;1", 14);
+	LoadSound("\\SND35.VAG;1", 15);
+	LoadSound("\\SND37.VAG;1", 16);
+	LoadSound("\\SND38.VAG;1", 17);
+	LoadSound("\\SND40.VAG;1", 18);
+	LoadSound("\\SND50.VAG;1", 19);
+	LoadSound("\\SND51.VAG;1", 20);
+	LoadSound("\\SND54.VAG;1", 21);
+	LoadSound("\\SND55.VAG;1", 22);
+
+	clut = (uint32_t*)malloc(sizeof(int32_t) * 8);
+
+	StoreImage(&clutArea, clut);
+	
+	RECT plyClutArea = { 640,244,16,1 };
+
+	LoadImage(&plyClutArea, clut);
 
 	printf("Assets Loaded\n");
 }
@@ -526,10 +581,10 @@ void mainLoop() {
 	if (paused)
 	{
 		const int x0 = PICO8_W / 2 - 3 * 4, y0 = 8;
-
+		p8_print("paused", x0 + 1, y0 + 1, 7);
 		p8_rectfill(x0 - 1, y0 - 1, 6 * 4 + x0 + 1, 6 + y0 + 1, 6);
 		p8_rectfill(x0, y0, 6 * 4 + x0, 6 + y0, 0);
-		p8_print("paused", x0 + 1, y0 + 1, 7);
+		
 	}
 	else
 	{
@@ -539,11 +594,21 @@ void mainLoop() {
 		Celeste_P8_draw();
 	}
 
+	if (repeat) {
+		if (repeatTimer >= 5) {
+			CdControlB(CdlPlay, &currentMusic, 0);
+			repeat = false;
+			repeatTimer = 0;
+		}
+		repeatTimer++;
+	}
+
 	// Wait for GPU to finish drawing and vertical retrace
 	DrawSync(0);
 	VSync(0);
-	DrawSync(0);
 	VSync(0);
+	//cdMusic_Update();
+	
 
 	// Swap buffers
 	db_active ^= 1;
@@ -576,7 +641,7 @@ static void p8_rectfill(int x0, int y0, int x1, int y1, int col)
 		setTile(tile);
 		setWH(tile, w, h);
 		setXY0(tile, x0 + SCREEN_XOFFSET, y0 + SCREEN_YOFFSET);
-		setRGB0(tile, basePalette[col % 16].r, basePalette[col % 16].g, basePalette[col % 16].b);
+		setRGB0(tile, palette[col % 16].r, palette[col % 16].g, palette[col % 16].b);
 
 		addPrim(&db[db_active].ot, tile);
 		tile++;
@@ -586,6 +651,17 @@ static void p8_rectfill(int x0, int y0, int x1, int y1, int col)
 
 static void p8_print(const char* str, int x, int y, int col)
 {
+	DR_TPAGE* tprit;
+
+	tprit = (DR_TPAGE*)db_nextpri;
+
+	setDrawTPage(tprit, 0, 1, getTPage(0 & 0x3, 0, 640, 0));
+	addPrim(&db[db_active].ot, tprit);
+	tprit++;
+
+
+	db_nextpri += sizeof(DR_TPAGE);
+
 	SPRT_8* sprt;
 	char c;
 	for (c = *str; c; c = *(++str))
@@ -613,7 +689,7 @@ static void p8_print(const char* str, int x, int y, int col)
 
 	// Set Font T-Page
 
-	DR_TPAGE* tprit = (DR_TPAGE*)db_nextpri;
+	tprit = (DR_TPAGE*)db_nextpri;
 
 	setDrawTPage(tprit, 0, 1, getTPage(0 & 0x3, 0, 640, 256));
 	addPrim(&db[db_active].ot, tprit);
@@ -668,12 +744,6 @@ static bool inputPoll(int btn) {
 
 
 
-			}
-			if (!(pad->btn & PAD_START)) {
-
-					//Music Stuff
-
-					paused = !paused;
 			}
 		}
 	}
@@ -768,14 +838,17 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 	int ret = 0;
 	SPRT_8* sprt;
 	DR_TPAGE* tprit;
+	DR_CACHE* cprim;
 	LINE_F2* line;
-	CdlLOC track;
 	int b = 0;
 	int col;
 	int x, y;
 	int tx;
 	int x0, y0, x1, y1;
 	int mask;
+	int sprite;
+	int cols, rows;
+	int flipx, flipy;
 
 	va_start(args, call);
 
@@ -799,32 +872,25 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 		}
 		else if (mus[index / 10] >= 0)
 		{
-			track.track = loc[(index / 10)].track;
-			track.minute = loc[(index / 10) ].minute;
-			track.second = loc[(index / 10)].second;
-			track.sector = 1;
-
-			printf("Track %d  min %d sec %d sector %d   %d\n", track.track, track.minute, track.second, track.sector, index / 10);
-
-			uint8_t s = 6;
+			uint8_t s = (index / 10) + 2;
 
 			//CdControlB(CdlSetloc, &track, 0);
 			CdControlB(CdlPlay, &s, 0);
 
 			//DrawSync(0);
-			VSync(0);
+			//VSync(0);
 
-			currentMusic = mus[index / 10];
+			currentMusic = s;
 		}
 		break;
 	case CELESTE_P8_SPR:
-		int sprite = INT_ARG();
+		sprite = INT_ARG();
 		x = INT_ARG();
 		y = INT_ARG();
-		int cols = INT_ARG();
-		int rows = INT_ARG();
-		int flipx = BOOL_ARG();
-		int flipy = BOOL_ARG(); // Not Supported / Used
+		cols = INT_ARG();
+		rows = INT_ARG();
+		flipx = BOOL_ARG();
+		flipy = BOOL_ARG(); // Not Supported / Used
 
 		assert(rows == 1 && cols == 1);
 
@@ -857,6 +923,57 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 			}
 		}
 		break;
+	case CELESTE_P8_PLYSPR:
+		sprite = INT_ARG();
+		x = INT_ARG();
+		y = INT_ARG();
+		cols = INT_ARG();
+		rows = INT_ARG();
+		flipx = BOOL_ARG();
+		flipy = BOOL_ARG(); // Not Supported / Used
+
+		//assert(rows == 1 && cols == 1);
+
+		PIX_RGB5 pix;
+
+		pix.r = basePalette[rows].r / 8;
+		pix.g = basePalette[rows].g / 8;
+		pix.b = basePalette[rows].b / 8;
+		pix.i = 0;
+
+		RECT pixArea = { 640 + 1,244,1,2 };
+
+		LoadImage(&pixArea, (uint32_t*)&pix);
+
+		if (sprite >= 0) {
+
+			int flip = flipx ? 64 : 0;
+
+			sprt = (SPRT_8*)db_nextpri;
+
+			setSprt8(sprt);
+			setXY0(sprt, x + SCREEN_XOFFSET, y + SCREEN_YOFFSET);
+			setUV0(sprt, 8 * (sprite % 16), 8 * (sprite / 16) + flip);
+			setClut(sprt, 640, 244);
+			setRGB0(sprt, 128, 128, 128);
+
+			addPrim(&db[db_active].ot, sprt);
+			sprt++;
+			db_nextpri += sizeof(SPRT_8);
+
+			if (currentTPage != 0) {
+				tprit = (DR_TPAGE*)db_nextpri;
+
+				setDrawTPage(tprit, 0, 1, getTPage(0 & 0x3, 0, 640, 0));
+				addPrim(&db[db_active].ot, tprit);
+				tprit++;
+
+				db_nextpri += sizeof(DR_TPAGE);
+
+				currentTPage = 0;
+			}
+		}
+		break;
 	case CELESTE_P8_BTN:
 		b = INT_ARG();
 		assert(b >= 0 && b <= 5);
@@ -867,7 +984,7 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 	case CELESTE_P8_SFX:
 		int id = INT_ARG();
 
-		spu_playSFX(soundId2SPUChannel(id));
+		play_sample(sfxAddr[id],sampleRate);
 
 		break;
 	case CELESTE_P8_PAL:
@@ -880,11 +997,27 @@ int pico8emu(CELESTE_P8_CALLBACK_TYPE call, ...) {
 			palette[a].g = basePalette[b].g;
 			palette[a].b = basePalette[b].b;
 			palette[a].cd = basePalette[b].cd;
+
+			PIX_RGB5 pix;
+
+			pix.r = palette[a].r / 8;
+			pix.g = palette[a].g / 8;
+			pix.b = palette[a].b / 8;
+			pix.i = 0;
+
+			RECT pixArea = { 640 + paletteTranslate[a],240,1,2 };
+
+			LoadImage(&pixArea, (uint32_t*)&pix);
+
+			while(DrawSync(1));
 		}
 		break;
 	case CELESTE_P8_PAL_RESET:
 
 		memcpy(palette, basePalette, sizeof(palette));
+
+		LoadImage(&clutArea, clut);
+		DrawSync(0);
 
 		break;
 	case CELESTE_P8_CIRCFILL:
@@ -1049,3 +1182,4 @@ end:
 	va_end(args);
 	return ret;
 }
+
