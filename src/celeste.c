@@ -1683,7 +1683,7 @@ static void MESSAGE_draw(OBJ* this)
             if (this->index>=this->last+1)
             {
                 this->last+=1;
-                P8sfx(35);
+                //P8sfx(35);
             }
         }
         this->off2.x = 8;
@@ -1697,7 +1697,7 @@ static void MESSAGE_draw(OBJ* this)
                 
                 
                 P8print(charstr,this->off2.x,this->off2.y,0);
-                P8rectfill(this->off2.x-2,this->off2.y-2,this->off2.x+7,this->off2.y+6, 0);
+                
                 
                 this->off2.x+=5;
             }
@@ -1707,12 +1707,14 @@ static void MESSAGE_draw(OBJ* this)
                 this->off2.y+=7;
             }
         }
+        P8rectfill(8,94,116,116, 0);
     }
     else
     {
         this->index=0;
         this->last=0;
     }
+    
 }
 
 //big_chest
@@ -1843,7 +1845,7 @@ static void FLAG_draw(OBJ* this)
     if (this->show)
     {
         P8spr(26,55,6, 1,1,false,false);
-        P8rectfill(32,2,96,31,0);
+        
         {
             char str[16];
             snprintf(str, sizeof(str), "x%i", this->score);
@@ -1856,6 +1858,7 @@ static void FLAG_draw(OBJ* this)
         }       
         
         draw_time(49,16);
+        P8rectfill(32,2,96,31,0);
         
     }
     else if (OBJ_check(this, OBJ_PLAYER,0,0))
