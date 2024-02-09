@@ -12,7 +12,7 @@ This version is built off of ngage-sdk's work.
 
 PLEASE NOTE: Pausing and Using Save States does not work and attempting to save state WILL CRASH
 
-This game doesn't work on DUCKSTATION as of version 0.1-5485-gc6a57273. PCSX-Redux or Real Hardware is recommmened instead
+This game doesn't work on DUCKSTATION as of version 0.1-5485-gc6a57273. PCSX-Redux or Real Hardware is recommmended instead
 
 ## Compiling
 
